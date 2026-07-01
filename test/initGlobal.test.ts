@@ -15,6 +15,7 @@ describe('runInitGlobal', () => {
     const cfg = JSON.parse(fs.readFileSync(path.join(home, '.se-harness', 'config.json'), 'utf8'));
     expect(cfg.defaultAdapters).toEqual(['claude', 'agents']);
     expect(res.created).toContain('preferences.md');
+    expect(res.created).toContain('config.json');
   });
 
   it('skips existing files without force', () => {
@@ -22,5 +23,17 @@ describe('runInitGlobal', () => {
     runInitGlobal({ home });
     const res = runInitGlobal({ home });
     expect(res.skipped).toContain('preferences.md');
+    expect(res.skipped).toContain('config.json');
+  });
+
+  it('overwrites existing files with force: true', () => {
+    const home = tmpHome();
+    runInitGlobal({ home });
+    const prefPath = path.join(home, '.se-harness', 'preferences.md');
+    fs.writeFileSync(prefPath, 'STALE');
+    const res = runInitGlobal({ home, force: true });
+    const content = fs.readFileSync(prefPath, 'utf8');
+    expect(content).not.toBe('STALE');
+    expect(res.created).toContain('preferences.md');
   });
 });

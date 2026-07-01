@@ -284,8 +284,9 @@ Track qualitatively at first; add metrics if/when a team adopts it.
 - Reconcile the exploratory scaffold files created before this spec
   (`README.md`, `harness/core/*`, `harness/global/*`) with the package layout in
   §5 during M0 (they become `assets/core/*` / `assets/project-template/*`).
-- Decide npm package name / bin name.
 
 ## 15. Resolved Decisions
 - **Host global path:** `~/.se-harness/` (dedicated dotfolder). XDG
   (`~/.config/se-harness/`) support may be added later; not in v1.
+- **Naming:** npm package `se-harness`; binary command `seh` (e.g. `seh init`,
+  `seh sync`, `seh check`, `seh update`, `seh add <tool>`, `seh init --global`).

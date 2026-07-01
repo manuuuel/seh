@@ -1,5 +1,5 @@
 // test/layers.test.ts
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -9,10 +9,16 @@ function tmp() { return fs.mkdtempSync(path.join(os.tmpdir(), 'sehlay-')); }
 
 describe('buildLayers', () => {
   let root: string;
+  const cleanupDirs: string[] = [];
   beforeEach(() => {
     root = tmp();
+    cleanupDirs.push(root);
     fs.mkdirSync(path.join(root, '.harness'), { recursive: true });
     fs.writeFileSync(path.join(root, '.harness', 'project.md'), '# Project\nMISSION');
+  });
+  afterEach(() => {
+    for (const dir of cleanupDirs) fs.rmSync(dir, { recursive: true, force: true });
+    cleanupDirs.length = 0;
   });
 
   it('includes two L0 layers and the L2 project file', () => {
@@ -25,11 +31,13 @@ describe('buildLayers', () => {
 
   it('omits L1 when no global prefs exist', () => {
     const home = tmp(); // empty home, no ~/.se-harness/preferences.md
+    cleanupDirs.push(home);
     expect(buildLayers(root, home).some(l => l.name === 'L1')).toBe(false);
   });
 
   it('includes L1 when global prefs exist', () => {
     const home = tmp();
+    cleanupDirs.push(home);
     fs.mkdirSync(path.join(home, '.se-harness'), { recursive: true });
     fs.writeFileSync(path.join(home, '.se-harness', 'preferences.md'), 'PREFS');
     const l1 = buildLayers(root, home).filter(l => l.name === 'L1');

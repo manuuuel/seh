@@ -1,5 +1,5 @@
 // test/check.test.ts
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -15,6 +15,7 @@ describe('runCheck', () => {
     fs.mkdirSync(path.join(root, '.harness'), { recursive: true });
     fs.writeFileSync(path.join(root, '.harness', 'project.md'), '# Project\nMISSION');
   });
+  afterEach(() => { fs.rmSync(root, { recursive: true, force: true }); });
 
   it('reports ok right after sync', () => {
     runSync({ root, adapters: ['claude'] });

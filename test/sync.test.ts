@@ -1,5 +1,5 @@
 // test/sync.test.ts
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -14,6 +14,7 @@ describe('runSync', () => {
     fs.mkdirSync(path.join(root, '.harness'), { recursive: true });
     fs.writeFileSync(path.join(root, '.harness', 'project.md'), '# Project\nMISSION');
   });
+  afterEach(() => { fs.rmSync(root, { recursive: true, force: true }); });
 
   it('writes CLAUDE.md and AGENTS.md with banner and content', () => {
     const res = runSync({ root, adapters: ['claude', 'agents'] });

@@ -48,9 +48,10 @@ This writes:
 - `harness.lock` — provenance metadata
 
 **Important:** Generated files (`CLAUDE.md`, `AGENTS.md`) must **NOT** be hand-edited. They are automatically composed from:
-1. Global layer (L0): `~/.se-harness/preferences.md`
-2. Project layer (L1): `.harness/*.md`
-3. Local layer (L2): reserved for future use
+- **L0 — Core** (bundled `assets/core/*`): universal principles + agent base.
+- **L1 — Global** (`~/.se-harness/preferences.md`): your personal defaults.
+- **L2 — Project** (`.harness/*.md`): this repository's context.
+- Precedence: **L2 > L1 > L0** (project overrides global overrides core).
 
 To make changes, edit the `.harness/` source files and re-run `seh sync`.
 

@@ -1,5 +1,5 @@
 // test/initProject.test.ts
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -10,6 +10,7 @@ function tmp() { return fs.mkdtempSync(path.join(os.tmpdir(), 'sehproj-')); }
 describe('runInitProject', () => {
   let root: string;
   beforeEach(() => { root = tmp(); });
+  afterEach(() => { fs.rmSync(root, { recursive: true, force: true }); });
 
   it('scaffolds the four .harness files', () => {
     const res = runInitProject({ root });

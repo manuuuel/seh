@@ -1,6 +1,8 @@
 import { Command } from 'commander';
+import os from 'node:os';
 import { runSync } from './commands/sync.js';
 import { runCheck } from './commands/check.js';
+import { runInitGlobal } from './commands/initGlobal.js';
 
 export function buildProgram(): Command {
   const program = new Command();
@@ -28,6 +30,21 @@ export function buildProgram(): Command {
       if (res.missing.length) console.error(`seh: missing ${res.missing.join(', ')}`);
       if (res.drift.length) console.error(`seh: stale ${res.drift.join(', ')} (run \`seh sync\`)`);
       process.exitCode = 1;
+    });
+
+  program
+    .command('init')
+    .description('Initialize the global harness (--global) or the current project')
+    .option('-g, --global', 'set up the host-level global harness (~/.se-harness)')
+    .option('-f, --force', 'overwrite existing files')
+    .action((opts: { global?: boolean; force?: boolean }) => {
+      if (opts.global) {
+        const res = runInitGlobal({ home: os.homedir(), force: opts.force });
+        console.log(`seh: global created [${res.created.join(', ')}] skipped [${res.skipped.join(', ')}]`);
+        return;
+      }
+      // Project init is handled in Task 10.
+      console.log('seh: project init — see Task 10');
     });
 
   return program;

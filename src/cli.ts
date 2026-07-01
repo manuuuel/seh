@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import os from 'node:os';
+import { fileURLToPath } from 'node:url';
 import { runSync } from './commands/sync.js';
 import { runCheck } from './commands/check.js';
 import { runInitGlobal } from './commands/initGlobal.js';
@@ -55,6 +56,7 @@ export function buildProgram(): Command {
 }
 
 // Executed when run as a binary.
-if (import.meta.url === `file://${process.argv[1]}`) {
+const isMainModule = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
+if (isMainModule) {
   buildProgram().parseAsync(process.argv);
 }

@@ -3,6 +3,7 @@ import os from 'node:os';
 import { runSync } from './commands/sync.js';
 import { runCheck } from './commands/check.js';
 import { runInitGlobal } from './commands/initGlobal.js';
+import { runInitProject } from './commands/initProject.js';
 
 export function buildProgram(): Command {
   const program = new Command();
@@ -43,8 +44,11 @@ export function buildProgram(): Command {
         console.log(`seh: global created [${res.created.join(', ')}] skipped [${res.skipped.join(', ')}]`);
         return;
       }
-      // Project init is handled in Task 10.
-      console.log('seh: project init — see Task 10');
+      const res = runInitProject({ root: process.cwd(), force: opts.force });
+      const stacks = Object.entries(res.detected).filter(([, v]) => v).map(([k]) => k);
+      console.log(`seh: project created [${res.created.join(', ')}] skipped [${res.skipped.join(', ')}]`);
+      if (stacks.length) console.log(`seh: detected ${stacks.join(', ')} — fill in .harness/stack.md`);
+      console.log('seh: edit .harness/*, then run `seh sync`.');
     });
 
   return program;

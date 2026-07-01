@@ -285,4 +285,7 @@ Track qualitatively at first; add metrics if/when a team adopts it.
   (`README.md`, `harness/core/*`, `harness/global/*`) with the package layout in
   §5 during M0 (they become `assets/core/*` / `assets/project-template/*`).
 - Decide npm package name / bin name.
-- Confirm host global path (`~/.se-harness/`) vs XDG (`~/.config/se-harness/`).
+
+## 15. Resolved Decisions
+- **Host global path:** `~/.se-harness/` (dedicated dotfolder). XDG
+  (`~/.config/se-harness/`) support may be added later; not in v1.

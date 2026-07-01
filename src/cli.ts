@@ -1,5 +1,6 @@
 import { Command } from 'commander';
 import { runSync } from './commands/sync.js';
+import { runCheck } from './commands/check.js';
 
 export function buildProgram(): Command {
   const program = new Command();
@@ -15,6 +16,18 @@ export function buildProgram(): Command {
     .action((opts: { adapters: string }) => {
       const res = runSync({ root: process.cwd(), adapters: opts.adapters.split(',') });
       console.log(`seh: wrote ${res.written.join(', ')}`);
+    });
+
+  program
+    .command('check')
+    .description('Detect drift between .harness sources and generated files')
+    .option('-a, --adapters <list>', 'comma-separated adapters', 'claude,agents')
+    .action((opts: { adapters: string }) => {
+      const res = runCheck({ root: process.cwd(), adapters: opts.adapters.split(',') });
+      if (res.ok) { console.log('seh: no drift.'); return; }
+      if (res.missing.length) console.error(`seh: missing ${res.missing.join(', ')}`);
+      if (res.drift.length) console.error(`seh: stale ${res.drift.join(', ')} (run \`seh sync\`)`);
+      process.exitCode = 1;
     });
 
   return program;

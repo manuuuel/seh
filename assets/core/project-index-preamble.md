@@ -1,6 +1,8 @@
 # AGENTS.md — Project Harness
 
-Project-specific context and per-technology guidelines.
-Global cross-cutting rules also apply (see your host `~/.seh/AGENTS.md`);
-extend them, never contradict them.
-This file is an INDEX: read the linked modules on demand.
+Follow the global ruleset in `~/.seh/AGENTS.md`; this project layer EXTENDS it,
+never contradicts it.
+
+This file is a directive INDEX, not a rulebook. Each entry below says WHEN to
+read it. Before you work on a task, open the module that matches it and follow
+its guidance. Read `.seh/project.md` first.

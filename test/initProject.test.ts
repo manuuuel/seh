@@ -16,8 +16,8 @@ describe('runInitProject (v2)', () => {
     expect(fs.existsSync(path.join(root, '.seh', 'project.md'))).toBe(true);
     expect(fs.existsSync(path.join(root, '.seh', 'domain', 'glossary.md'))).toBe(true);
     expect(fs.existsSync(path.join(root, '.seh', 'stack', 'typescript.md'))).toBe(true);
-    expect(fs.existsSync(path.join(root, 'AGENTS.md'))).toBe(true);
-    expect(res.synced).toContain('AGENTS.md');
+    expect(fs.existsSync(path.join(root, '.seh', 'AGENTS.md'))).toBe(true);
+    expect(res.synced).toContain('.seh/AGENTS.md');
   });
 
   it('rejects an empty selection', () => {
@@ -34,5 +34,10 @@ describe('runInitProject (v2)', () => {
     runInitProject({ root, technologies: ['go'] });
     const res = runInitProject({ root, technologies: ['go'] });
     expect(res.skipped).toContain('.seh/project.md');
+  });
+  it('creates project symlinks when projectTools provided', () => {
+    const r = fs.mkdtempSync(path.join(os.tmpdir(), 'sehip-'));
+    runInitProject({ root: r, technologies: ['typescript'], projectTools: ['codex'] });
+    expect(fs.lstatSync(path.join(r, 'AGENTS.md')).isSymbolicLink()).toBe(true);
   });
 });

@@ -19,8 +19,9 @@ describe('e2e v2', () => {
 
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sehe2eP-'));
     runInitProject({ root, technologies: ['typescript', 'python'] });
-    expect(fs.existsSync(path.join(root, 'AGENTS.md'))).toBe(true);
+    expect(fs.existsSync(path.join(root, '.seh', 'AGENTS.md'))).toBe(true);
     expect(fs.existsSync(path.join(root, '.seh', 'stack', 'python.md'))).toBe(true);
+    expect(fs.existsSync(path.join(root, '.seh', 'stack', 'typescript.md'))).toBe(true);
     expect(runCheck({ root }).ok).toBe(true);
   });
 });

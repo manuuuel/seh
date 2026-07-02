@@ -8,11 +8,14 @@ import { runInitProject } from '../src/commands/initProject.js';
 import { runCheck } from '../src/commands/check.js';
 
 describe('e2e v2', () => {
-  it('global init writes a modular index; project init syncs with no drift', () => {
+  it('global init writes one unified file; project init syncs with no drift', () => {
     const home = fs.mkdtempSync(path.join(os.tmpdir(), 'sehe2eH-'));
     runInitGlobal({ home, tools: [] });
-    expect(fs.existsSync(path.join(home, '.seh', 'AGENTS.md'))).toBe(true);
-    expect(fs.existsSync(path.join(home, '.seh', 'global', 'security.md'))).toBe(true);
+    const gc = fs.readFileSync(path.join(home, '.seh', 'AGENTS.md'), 'utf8');
+    expect(gc).toContain('# Craftsmanship');
+    expect(gc).toContain('# Security');
+    expect(gc).not.toContain('## Contents');
+    expect(fs.existsSync(path.join(home, '.seh', 'global'))).toBe(false);
 
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sehe2eP-'));
     runInitProject({ root, technologies: ['typescript', 'python'] });

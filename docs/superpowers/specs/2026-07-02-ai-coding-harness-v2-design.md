@@ -68,7 +68,15 @@ the repo. The project index notes that global rules apply and must not be contra
 
 ## 4. The index & module model
 
-**`AGENTS.md` (both host and project) is an INDEX**, not a content dump:
+The index model differs by layer:
+
+**Host global `AGENTS.md` is a SINGLE self-contained file** (not an index): a
+preamble + all cross-cutting sections inlined in one document, so the tools that
+auto-load a global instructions file get the full ruleset directly. The
+**Craftsmanship** section is forced first. Authored from modular source files
+(kept modular for maintainability) but emitted as one file.
+
+**Project `AGENTS.md` is an INDEX** (not a content dump):
 - A short preamble (what this is, precedence, "extend not contradict").
 - A linked table of contents: portable **relative Markdown links** to module files.
 - Modules are loaded **on demand** by the agent (no tool-specific include syntax).
@@ -76,14 +84,13 @@ the repo. The project index notes that global rules apply and must not be contra
 **Host global** (`~/.seh/`):
 ```
 ~/.seh/
-  AGENTS.md                 # global index
-  global/
-    security.md  commits.md  quality-gates.md  code-principles.md
-    testing.md  error-handling.md  dependencies.md  documentation.md
-    observability.md  data-privacy.md  refactoring.md  workflow.md
-    branching.md  session-startup.md  reporting.md  boundaries.md
+  AGENTS.md                 # ONE unified file: preamble + all global sections inline
   config.json               # selected symlink targets, settings
 ```
+Global source sections (emitted inline, Craftsmanship first): craftsmanship,
+security, commits, quality-gates, code-principles, testing, error-handling,
+dependencies, documentation, observability, data-privacy, refactoring, workflow,
+branching, session-startup, reporting, boundaries.
 
 **Project** (`<repo>/`):
 ```

@@ -34,7 +34,7 @@ describe('runCheck (v2)', () => {
     fs.writeFileSync(path.join(root, '.seh', 'project.md'), '# Renamed\nX');
     const res = runCheck({ root });
     expect(res.ok).toBe(false);
-    expect(res.drift).toContain('AGENTS.md');
+    expect(res.drift).toContain('.seh/AGENTS.md');
   });
 
   it('detects stack module drift', () => {
@@ -43,5 +43,20 @@ describe('runCheck (v2)', () => {
     const res = runCheck({ root });
     expect(res.ok).toBe(false);
     expect(res.drift).toContain('.seh/stack/go.md');
+  });
+
+  it('flags a project symlink that points elsewhere', () => {
+    // build a valid project first
+    const r = fs.mkdtempSync(path.join(os.tmpdir(), 'sehchk-'));
+    fs.mkdirSync(path.join(r, '.seh', 'domain'), { recursive: true });
+    fs.writeFileSync(path.join(r, '.seh', 'project.md'), '# Project\n');
+    runSync({ root: r, technologies: ['typescript'], projectTools: ['codex'] });
+    expect(runCheck({ root: r }).ok).toBe(true);
+    // replace the symlink target with a bogus real file
+    fs.rmSync(path.join(r, 'AGENTS.md'), { force: true });
+    fs.writeFileSync(path.join(r, 'AGENTS.md'), 'not a symlink');
+    const res = runCheck({ root: r });
+    expect(res.ok).toBe(false);
+    expect(res.drift.some((d) => d.startsWith('AGENTS.md'))).toBe(true);
   });
 });

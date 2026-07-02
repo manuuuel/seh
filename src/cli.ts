@@ -10,7 +10,7 @@ import { runCheck } from './commands/check.js';
 import { runLink } from './commands/link.js';
 import { detectTechnologies } from './detect.js';
 import { SUPPORTED_TECHS } from './catalog.js';
-import { TOOL_TARGETS, linkTool } from './links.js';
+import { SUPPORTED_TOOLS, linkTool, readConfiguredTools } from './links.js';
 import { lockFile } from './paths.js';
 import fs from 'node:fs';
 
@@ -40,7 +40,7 @@ export function buildProgram(): Command {
           if (!opts.yes && tools.length === 0) {
             const res = await prompts({
               type: 'multiselect', name: 'tools', message: 'Symlink into which tools?',
-              choices: Object.keys(TOOL_TARGETS).map((t) => ({ title: t, value: t })),
+              choices: SUPPORTED_TOOLS.map((t) => ({ title: t, value: t })),
             });
             if (res.tools === undefined) {
               console.log('seh: cancelled.');
@@ -50,7 +50,7 @@ export function buildProgram(): Command {
             tools = res.tools;
           }
           const out = runInitGlobal({ home: os.homedir(), tools, force: opts.force });
-          for (const t of tools) linkTool(t, os.homedir());
+          for (const t of tools) linkTool('global', t, os.homedir());
           console.log(`seh: global ready [${out.created.join(', ')}] tools [${tools.join(', ') || 'none'}]`);
           return;
         }
@@ -73,7 +73,12 @@ export function buildProgram(): Command {
             techs = res.techs;
           }
         }
-        const out = runInitProject({ root, technologies: techs, force: opts.force });
+        const out = runInitProject({
+          root, technologies: techs,
+          force: opts.force,
+          projectTools: readConfiguredTools(os.homedir()),
+          home: os.homedir(),
+        });
         console.log(`seh: project ready [created ${out.created.length}, synced ${out.synced.join(', ')}]`);
       } catch (err) { fail(err); }
     });
@@ -85,7 +90,7 @@ export function buildProgram(): Command {
       try {
         const root = process.cwd();
         const lock = JSON.parse(fs.readFileSync(lockFile(root), 'utf8'));
-        const res = runSync({ root, technologies: lock.technologies ?? [] });
+        const res = runSync({ root, technologies: lock.technologies ?? [], home: os.homedir() });
         console.log(`seh: wrote ${res.written.join(', ')}`);
       } catch (err) { fail(err); }
     });

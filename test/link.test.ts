@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { runLink } from '../src/commands/link.js';
 import { globalDir, globalIndexFile } from '../src/paths.js';
+import { SUPPORTED_TOOLS } from '../src/links.js';
 
 function tmpHome() {
   const h = fs.mkdtempSync(path.join(os.tmpdir(), 'sehlk-'));
@@ -34,5 +35,16 @@ describe('runLink', () => {
     const home = tmpHome();
     fs.writeFileSync(path.join(home, '.seh', 'config.json'), 'not json');
     expect(() => runLink({ home, add: ['claude'] })).toThrow(/Malformed config.json/);
+  });
+  it('persists copilot in config even though it has no global link', () => {
+    const home = tmpHome();
+    const res = runLink({ home, add: ['copilot', 'codex'] });
+    expect(res.tools).toEqual(expect.arrayContaining(['copilot', 'codex']));
+    const cfg = JSON.parse(fs.readFileSync(path.join(home, '.seh', 'config.json'), 'utf8'));
+    expect(cfg.tools).toEqual(expect.arrayContaining(['copilot', 'codex']));
+  });
+  it('rejects an unknown tool', () => {
+    const home = tmpHome();
+    expect(() => runLink({ home, add: ['bogus'] })).toThrow(/Unknown tool/);
   });
 });

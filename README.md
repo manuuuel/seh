@@ -1,98 +1,102 @@
 # se-harness
 
-Portable AI coding harness generator for Claude, Agents, and other tools.
+Portable, tool-agnostic AI coding harness generator. One source of truth,
+`AGENTS.md` as the entrypoint, no vendor lock-in.
 
-## Usage
+`seh` produces the context files that AI coding agents (Claude Code, Codex,
+Cursor, OpenCode, …) read: a **single global ruleset** on your machine plus a
+**per-project index** of focused, technology-specific guideline modules.
 
-The `seh` CLI manages a modular AI coding harness across three layers:
+## Layers
 
-- **L0 — Core** (bundled): universal principles and base content.
-- **L1 — Global** (`~/.seh/`): authored once per developer; optional tool symlinks.
-- **L2 — Project** (`.seh/` + `AGENTS.md` index): per-repository context.
+| Layer | Location | What it is |
+|-------|----------|------------|
+| **L0 — Core** | bundled in the CLI | The authored source content (global sections + per-technology catalog). |
+| **L1 — Global** | `~/.seh/` | A **single unified `AGENTS.md`** with your cross-cutting rules. Authored once per machine; optional tool symlinks. Not copied into repos. |
+| **L2 — Project** | `<repo>/AGENTS.md` + `.seh/` | A **thin index** linking project + per-technology modules. Committed to the repo. |
 
-### Overview
+Global rules apply everywhere; project layers **extend — never contradict** them.
 
-**AGENTS.md** is an **index** that links to modular content in `.seh/`:
-- **Global modules** (from `~/.seh/global/`): security, preferences.
-- **Domain modules** (`.seh/domain/`): architecture, glossary.
-- **Stack modules** (`.seh/stack/`): technology-specific guides (e.g., `typescript.md`, `python.md`).
-- **Project metadata** (`.seh/project.md`): purpose and goals.
+**Generated files must NOT be hand-edited.** Edit the `.seh/` sources and run
+`seh sync` to regenerate.
 
-**Generated files must NOT be hand-edited.** Edit `.seh/` source files and run `seh sync` to regenerate.
+## The two shapes of `AGENTS.md`
 
-### Commands
+- **Global (`~/.seh/AGENTS.md`) is one self-contained file** — every guardrail
+  inlined in a single document, led by a forced **Craftsmanship** principle
+  (keep it small and sharp, write elegant code, seek the most minimal
+  better-working design, introduce no slop). Tools that auto-load a global
+  instructions file get the whole ruleset directly.
+- **Project (`<repo>/AGENTS.md`) is an index** — a short preamble plus a linked
+  table of contents pointing at focused modules under `.seh/`, loaded on demand:
+  - `.seh/project.md` — mission, constraints, out-of-scope
+  - `.seh/domain/*.md` — architecture, glossary
+  - `.seh/stack/<tech>.md` — per-technology best practices
 
-#### 1. Global initialization
+## Commands
 
-Set up the host-level harness at `~/.seh/`:
-
-```bash
-seh init --global
-```
-
-This creates:
-- `~/.seh/AGENTS.md` — global index
-- `~/.seh/global/` — 16 modules (security, boundaries, branching, code-principles, commits, data-privacy, dependencies, documentation, error-handling, observability, quality-gates, refactoring, reporting, session-startup, testing, workflow)
-- `~/.seh/config.json` — tool configuration
-
-Optionally, link tools to the global index:
-
-```bash
-seh link --add claude      # symlink ~/.claude/CLAUDE.md -> ~/.seh/AGENTS.md
-seh link --remove claude   # remove that symlink
-```
-
-#### 2. Project initialization
-
-In your project directory, create the `.seh/` structure and choose technologies:
+### 1. Global setup (once per machine)
 
 ```bash
-seh init --tech typescript,python
+seh init --global            # interactive: choose which tools to symlink
+seh init --global --tools claude --yes   # non-interactive
 ```
 
-This creates:
-- `AGENTS.md` — project index (links to global + project modules)
-- `.seh/project.md` — project purpose and goals
-- `.seh/domain/architecture.md` — system design and structure
-- `.seh/domain/glossary.md` — domain terms and concepts
-- `.seh/stack/typescript.md` — TypeScript setup and conventions
-- `.seh/stack/python.md` — Python setup and conventions
-- `seh.lock` — provenance metadata
+Creates:
+- `~/.seh/AGENTS.md` — the unified global ruleset (Craftsmanship first, then
+  security, quality gates, testing, commits, branching, dependencies, error
+  handling, observability, data & privacy, documentation, refactoring, workflow,
+  session startup, reporting, boundaries, code principles).
+- `~/.seh/config.json` — which tools are symlinked.
 
-**Supported technologies:** `javascript`, `typescript`, `python`, `go`, `c`, `rust`, `java`
+Optionally wire tools to auto-load it (see `seh link`).
 
-After initialization, edit the `.seh/*.md` files to describe your project.
+### 2. Project setup
 
-#### 3. Sync: Regenerate index
+```bash
+cd your-project
+seh init                     # detects technologies, interactive multi-select
+seh init --tech typescript,python --yes   # non-interactive (≥1 required)
+```
 
-After editing `.seh/` sources, regenerate the index:
+Creates:
+- `AGENTS.md` — the project index (links to the modules below)
+- `.seh/project.md`, `.seh/domain/architecture.md`, `.seh/domain/glossary.md`
+- `.seh/stack/<tech>.md` for each selected technology
+- `seh.lock` — records the selected technologies (commit it)
+
+**Supported technologies:** `javascript`, `typescript`, `python`, `go`, `c`,
+`rust`, `java`. No generic fallback — pick at least one.
+
+Then fill in `.seh/project.md` and `.seh/domain/*` and re-sync.
+
+### 3. Sync — regenerate from sources
 
 ```bash
 seh sync
 ```
 
-This rewrites `AGENTS.md` and updates `seh.lock`. The index remains portable (no absolute paths).
+Rewrites the project `AGENTS.md` index and `.seh/stack/*` from `seh.lock`.
+Idempotent (no change on re-run with unchanged sources).
 
-#### 4. Check: Detect drift
-
-Verify that `AGENTS.md` and `seh.lock` are in sync with `.seh/` sources:
+### 4. Check — detect drift
 
 ```bash
 seh check
 ```
 
-Exits with code 0 if no drift; code 1 if files are stale or missing. Run `seh sync` to fix drift.
+Exit 0 if the generated files match the sources; exit 1 (with a message) if
+`AGENTS.md` or a stack module is stale or missing. Suitable for pre-commit/CI.
 
-#### 5. Link: Manage tool symlinks
-
-Link or unlink tools to the global harness:
+### 5. Link — manage global tool symlinks
 
 ```bash
-seh link --add claude      # symlink ~/.claude/CLAUDE.md -> ~/.seh/AGENTS.md
-seh link --remove claude   # remove that symlink
+seh link --add claude        # symlink ~/.claude/CLAUDE.md -> ~/.seh/AGENTS.md
+seh link --remove claude     # remove it
 ```
 
-Supported tools: `claude`
+`AGENTS.md` stays the single source of truth; symlinks are pure pointers, so
+there is no per-tool content to drift. Supported tools: `claude` (more to come).
 
 ## Installation
 
@@ -100,12 +104,20 @@ Supported tools: `claude`
 npm install -g se-harness
 ```
 
-Or use locally in a project:
+Or per project:
 
 ```bash
 npm install --save-dev se-harness
 npx seh init
-npx seh sync
+```
+
+## Try it (sandboxed demo)
+
+Runs the whole flow against a throwaway `HOME` — your real `~/.seh` and
+`~/.claude` are untouched:
+
+```bash
+npm run try
 ```
 
 ## Development
@@ -113,8 +125,8 @@ npx seh sync
 ```bash
 npm install
 npm run build    # compile to dist/
-npm test         # run test suite
-npm run dev      # run CLI via tsx without building
+npm test         # run the test suite
+npm run dev      # run the CLI via tsx without building
 ```
 
 ## License

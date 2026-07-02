@@ -2,12 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { globalDir, globalIndexFile, globalModulesDir, globalConfigFile } from '../paths.js';
 import { globalModules, globalPreamble } from '../catalog.js';
-import { buildIndex, type IndexEntry } from '../index-emitter.js';
-
-export function titleOf(markdown: string): string {
-  const m = markdown.match(/^#\s+(.+)$/m);
-  return m ? m[1].trim() : 'Untitled';
-}
+import { buildIndex, type IndexEntry, titleOf } from '../index-emitter.js';
 
 export function runInitGlobal(opts: {
   home: string;

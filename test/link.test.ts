@@ -30,4 +30,9 @@ describe('runLink', () => {
     expect(res.unlinked).toContain('claude');
     expect(res.tools).not.toContain('claude');
   });
+  it('throws on malformed config.json', () => {
+    const home = tmpHome();
+    fs.writeFileSync(path.join(home, '.seh', 'config.json'), 'not json');
+    expect(() => runLink({ home, add: ['claude'] })).toThrow(/Malformed config.json/);
+  });
 });

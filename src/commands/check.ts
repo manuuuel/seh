@@ -3,6 +3,7 @@ import path from 'node:path';
 import { projectIndexFile, projectStackDir, lockFile } from '../paths.js';
 import { stackModule } from '../catalog.js';
 import { buildProjectIndex } from './sync.js';
+import type { LockFile } from '../types.js';
 
 export function runCheck(opts: { root: string }): { ok: boolean; drift: string[]; missing: string[] } {
   const drift: string[] = [];
@@ -12,7 +13,7 @@ export function runCheck(opts: { root: string }): { ok: boolean; drift: string[]
   if (!fs.existsSync(lockPath)) {
     return { ok: false, drift: [], missing: ['seh.lock'] };
   }
-  const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8')) as { technologies: string[] };
+  const lock = JSON.parse(fs.readFileSync(lockPath, 'utf8')) as LockFile;
   const techs = lock.technologies ?? [];
 
   // index

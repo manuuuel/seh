@@ -43,4 +43,8 @@ describe('runSync (v2)', () => {
     const b = fs.readFileSync(path.join(root, 'AGENTS.md'), 'utf8');
     expect(b).toBe(a);
   });
+
+  it('throws on unknown technology', () => {
+    expect(() => runSync({ root, technologies: ['cobol'] })).toThrow('Unknown technology: cobol');
+  });
 });

@@ -32,13 +32,14 @@ seh init --global
 
 This creates:
 - `~/.seh/AGENTS.md` — global index
-- `~/.seh/global/security.md` — secure coding practices
-- `~/.seh/global/preferences.md` — your personal coding preferences (editor, style, workflows)
+- `~/.seh/global/` — 16 modules (security, boundaries, branching, code-principles, commits, data-privacy, dependencies, documentation, error-handling, observability, quality-gates, refactoring, reporting, session-startup, testing, workflow)
+- `~/.seh/config.json` — tool configuration
 
-Optionally, create symlinks for tools:
+Optionally, link tools to the global index:
 
 ```bash
-seh link --tool claude --target ~/.config/claude
+seh link --add claude      # symlink ~/.claude/CLAUDE.md -> ~/.seh/AGENTS.md
+seh link --remove claude   # remove that symlink
 ```
 
 #### 2. Project initialization
@@ -82,16 +83,16 @@ seh check
 
 Exits with code 0 if no drift; code 1 if files are stale or missing. Run `seh sync` to fix drift.
 
-#### 5. Link: Create tool symlinks
+#### 5. Link: Manage tool symlinks
 
-Create symlinks from tool directories to `AGENTS.md`:
+Link or unlink tools to the global harness:
 
 ```bash
-seh link --tool claude --target ~/.config/claude
-seh link --tool claude --target .  # create CLAUDE.md symlink in current dir
+seh link --add claude      # symlink ~/.claude/CLAUDE.md -> ~/.seh/AGENTS.md
+seh link --remove claude   # remove that symlink
 ```
 
-Supported tools: `claude` (creates `CLAUDE.md` symlink).
+Supported tools: `claude`
 
 ## Installation
 

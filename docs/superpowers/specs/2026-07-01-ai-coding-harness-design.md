@@ -1,7 +1,11 @@
 # SE-Harness — AI Coding Harness Strategy (Design Spec)
 
+> **SUPERSEDED (2026-07-02):** The single-file generation model below was replaced
+> by the modular index + per-technology model. See
+> `2026-07-02-ai-coding-harness-v2-design.md`. This document is retained for history.
+
 **Date:** 2026-07-01
-**Status:** Draft for review
+**Status:** Superseded by v2
 **Owner:** Manuel Di Pietro
 
 A reusable, tool-agnostic framework for developing software with AI coding

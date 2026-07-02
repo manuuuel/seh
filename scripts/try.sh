@@ -12,10 +12,12 @@ run() { echo "+ seh $*"; node "$CLI" "$@"; echo; }
 
 echo "### Sandbox HOME=$HOME (your real home is untouched)"; echo
 
-echo "== 1. Global harness (symlink Claude) =="
-run init --global --tools claude --yes
+echo "== 1. Global harness (symlink Claude, Codex, Gemini) =="
+run init --global --tools claude,codex,gemini --yes
 echo "  ~/.seh contents:"; find "$HOME/.seh" -type f | sed "s#$HOME#~#" | sort; echo
-echo "  Claude symlink -> $(readlink "$HOME/.claude/CLAUDE.md" | sed "s#$HOME#~#")"; echo
+echo "  Claude symlink -> $(readlink "$HOME/.claude/CLAUDE.md" | sed "s#$HOME#~#")"
+echo "  Codex symlink -> $(readlink "$HOME/.codex/AGENTS.md" | sed "s#$HOME#~#")"
+echo "  Gemini symlink -> $(readlink "$HOME/.gemini/GEMINI.md" | sed "s#$HOME#~#")"; echo
 
 echo "== 2. A throwaway TypeScript+Go project =="
 PROJ="$SB/demo"; mkdir -p "$PROJ"; cd "$PROJ"
@@ -31,7 +33,9 @@ run check || echo "  -> exit $? (drift detected, as expected)"; echo
 run sync                             # regenerate
 run check                            # clean again
 
-echo "== 4. Unlink the tool =="
+echo "== 4. Unlink the tools =="
 run link --remove claude
+run link --remove codex
+run link --remove gemini
 
 echo "### Done. Sandbox left at: $SB (delete with: rm -rf \"$SB\")"

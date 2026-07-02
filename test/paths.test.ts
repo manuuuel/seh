@@ -18,4 +18,16 @@ describe('paths (v2)', () => {
   it('resolves assets dir', () => {
     expect(p.assetsDir().endsWith('assets')).toBe(true);
   });
+  it('builds per-tool global targets', () => {
+    expect(p.codexGlobalFile('/h')).toBe('/h/.codex/AGENTS.md');
+    expect(p.piGlobalFile('/h')).toBe('/h/.pi/agent/AGENTS.md');
+    expect(p.geminiGlobalFile('/h')).toBe('/h/.gemini/GEMINI.md');
+    expect(p.opencodeGlobalFile('/h')).toBe('/h/.config/opencode/AGENTS.md');
+  });
+  it('builds canonical + per-tool project targets', () => {
+    expect(p.projectCanonicalIndex('/r')).toBe('/r/.seh/AGENTS.md');
+    expect(p.projectClaudeFile('/r')).toBe('/r/CLAUDE.md');
+    expect(p.projectGeminiFile('/r')).toBe('/r/GEMINI.md');
+    expect(p.projectCopilotFile('/r')).toBe('/r/.github/copilot-instructions.md');
+  });
 });

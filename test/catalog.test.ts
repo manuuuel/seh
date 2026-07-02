@@ -1,6 +1,7 @@
 // test/catalog.test.ts
 import { describe, it, expect } from 'vitest';
 import * as c from '../src/catalog.js';
+import { stackCue, moduleCue, TECH_LABELS } from '../src/catalog.js';
 
 describe('catalog', () => {
   it('lists the seven supported techs', () => {
@@ -21,5 +22,19 @@ describe('catalog', () => {
   it('loads preambles', () => {
     expect(c.globalPreamble()).toContain('Global Dev Harness');
     expect(c.projectPreamble()).toContain('Project Harness');
+  });
+});
+
+describe('cues', () => {
+  it('labels and cues stacks', () => {
+    expect(TECH_LABELS.typescript).toBe('TypeScript');
+    expect(stackCue('typescript')).toBe('Read before writing or reviewing TypeScript code.');
+    expect(stackCue('go')).toBe('Read before writing or reviewing Go code.');
+  });
+  it('cues known project modules', () => {
+    expect(moduleCue('.seh/project.md')).toMatch(/Read first/);
+    expect(moduleCue('.seh/domain/architecture.md')).toMatch(/structure/);
+    expect(moduleCue('.seh/domain/glossary.md')).toMatch(/term/);
+    expect(moduleCue('.seh/domain/unknown.md')).toBe('');
   });
 });

@@ -31,3 +31,28 @@ export function globalPreamble(): string {
 export function projectPreamble(): string {
   return fs.readFileSync(path.join(assetsDir(), 'core', 'project-index-preamble.md'), 'utf8');
 }
+
+export const TECH_LABELS: Record<string, string> = {
+  javascript: 'JavaScript',
+  typescript: 'TypeScript',
+  python: 'Python',
+  go: 'Go',
+  c: 'C',
+  rust: 'Rust',
+  java: 'Java',
+};
+
+export function stackCue(tech: string): string {
+  const label = TECH_LABELS[tech] ?? tech;
+  return `Read before writing or reviewing ${label} code.`;
+}
+
+const MODULE_CUES: Record<string, string> = {
+  '.seh/project.md': 'Read first — mission, constraints, and out-of-scope for this repo.',
+  '.seh/domain/architecture.md': 'Read before changing structure, modules, or data flow.',
+  '.seh/domain/glossary.md': 'Consult when you hit an unfamiliar domain term.',
+};
+
+export function moduleCue(relPath: string): string {
+  return MODULE_CUES[relPath] ?? '';
+}

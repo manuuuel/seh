@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { Command } from 'commander';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -117,7 +118,15 @@ export function buildProgram(): Command {
   return program;
 }
 
-const isMainModule = process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1];
-if (isMainModule) {
+function isMainModule(): boolean {
+  const argv1 = process.argv[1];
+  if (!argv1) return false;
+  try {
+    return fs.realpathSync(fileURLToPath(import.meta.url)) === fs.realpathSync(argv1);
+  } catch {
+    return false;
+  }
+}
+if (isMainModule()) {
   buildProgram().parseAsync(process.argv);
 }

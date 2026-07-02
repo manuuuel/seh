@@ -31,10 +31,10 @@ describe('links (layer-aware)', () => {
     unlinkTool('global', 'codex', h);
     expect(isLinked('global', 'codex', h)).toBe(false);
   });
-  it('treats copilot global as a no-op', () => {
+  it('creates a copilot global symlink', () => {
     const h = tmpHome();
     linkTool('global', 'copilot', h);
-    expect(isLinked('global', 'copilot', h)).toBe(false);
+    expect(isLinked('global', 'copilot', h)).toBe(true);
   });
   it('creates nested project symlink for copilot', () => {
     const r = tmpRepo();

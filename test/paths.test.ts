@@ -23,6 +23,7 @@ describe('paths (v2)', () => {
     expect(p.piGlobalFile('/h')).toBe('/h/.pi/agent/AGENTS.md');
     expect(p.geminiGlobalFile('/h')).toBe('/h/.gemini/GEMINI.md');
     expect(p.opencodeGlobalFile('/h')).toBe('/h/.config/opencode/AGENTS.md');
+    expect(p.copilotGlobalFile('/h')).toBe('/h/.copilot/copilot-instructions.md');
   });
   it('builds canonical + per-tool project targets', () => {
     expect(p.projectCanonicalIndex('/r')).toBe('/r/.seh/AGENTS.md');

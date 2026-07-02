@@ -33,10 +33,10 @@ describe('e2e v2', () => {
     // 1) global init with several tools
     runInitGlobal({ home, tools: ['claude','codex','pi','gemini','opencode','copilot'] });
     for (const t of ['claude','codex','pi','gemini','opencode','copilot']) linkTool('global', t, home);
-    // copilot has no global target -> not linked; the rest resolve
+    // all six tools now have a global target and resolve
     expect(isLinked('global','codex',home)).toBe(true);
     expect(isLinked('global','gemini',home)).toBe(true);
-    expect(isLinked('global','copilot',home)).toBe(false);
+    expect(isLinked('global','copilot',home)).toBe(true);
 
     // 2) project init resolves project symlinks from config tools
     runInitProject({ root: repo, technologies: ['typescript'], projectTools: ['codex','gemini','copilot'], home });

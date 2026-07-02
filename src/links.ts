@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
   globalIndexFile, projectCanonicalIndex, globalConfigFile,
-  claudeGlobalFile, codexGlobalFile, piGlobalFile, geminiGlobalFile, opencodeGlobalFile,
+  claudeGlobalFile, codexGlobalFile, piGlobalFile, geminiGlobalFile, opencodeGlobalFile, copilotGlobalFile,
   projectIndexFile, projectClaudeFile, projectGeminiFile, projectCopilotFile,
 } from './paths.js';
 
@@ -16,6 +16,7 @@ const GLOBAL_TARGETS: Record<string, (base: string) => string> = {
   pi: piGlobalFile,
   gemini: geminiGlobalFile,
   opencode: opencodeGlobalFile,
+  copilot: copilotGlobalFile,
 };
 
 const PROJECT_TARGETS: Record<string, (base: string) => string> = {

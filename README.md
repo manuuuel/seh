@@ -103,8 +103,7 @@ seh link --remove claude     # remove it
 `AGENTS.md` stays the single source of truth; symlinks are pure pointers, so
 there is no per-tool content to drift.
 
-**Supported global tools:** `claude`, `codex`, `pi`, `gemini`, `opencode`  
-**Project-only:** `copilot` (no global target)
+**Supported global tools:** `claude`, `codex`, `pi`, `gemini`, `opencode`, `copilot`
 
 #### Global targets
 
@@ -115,7 +114,7 @@ there is no per-tool content to drift.
 | pi | `~/.pi/agent/AGENTS.md` |
 | gemini | `~/.gemini/GEMINI.md` |
 | opencode | `~/.config/opencode/AGENTS.md` |
-| copilot | _(none; project-only)_ |
+| copilot | `~/.copilot/copilot-instructions.md` |
 
 #### Project targets
 

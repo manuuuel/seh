@@ -7,9 +7,10 @@ describe('catalog', () => {
     expect([...c.SUPPORTED_TECHS]).toEqual(
       ['javascript','typescript','python','go','c','rust','java']);
   });
-  it('loads 16 global modules with names', () => {
+  it('loads the global modules with names', () => {
     const mods = c.globalModules();
-    expect(mods.length).toBe(16);
+    expect(mods.length).toBe(17);
+    expect(mods.map(m => m.name)).toContain('craftsmanship');
     expect(mods.map(m => m.name)).toContain('security');
     expect(mods.find(m => m.name === 'security')!.content).toContain('# Security');
   });

@@ -114,14 +114,14 @@ there is no per-tool content to drift.
 | codex | `~/.codex/AGENTS.md` |
 | pi | `~/.pi/agent/AGENTS.md` |
 | gemini | `~/.gemini/GEMINI.md` |
-| opencode | `~/.opencode/AGENTS.md` |
+| opencode | `~/.config/opencode/AGENTS.md` |
 | copilot | _(none; project-only)_ |
 
 #### Project targets
 
 | Tool | Target | Canonical |
 |------|--------|----------|
-| claude | `AGENTS.md` | `.seh/AGENTS.md` |
+| claude | `CLAUDE.md` | `.seh/AGENTS.md` |
 | codex | `AGENTS.md` | `.seh/AGENTS.md` |
 | pi | `AGENTS.md` | `.seh/AGENTS.md` |
 | gemini | `GEMINI.md` | `.seh/AGENTS.md` |

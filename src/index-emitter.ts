@@ -1,6 +1,6 @@
 import { BANNER } from './banner.js';
 
-export type IndexEntry = { title: string; relPath: string };
+export type IndexEntry = { title: string; relPath: string; cue?: string };
 
 export function titleOf(markdown: string): string {
   const m = markdown.match(/^#\s+(.+)$/m);
@@ -8,7 +8,9 @@ export function titleOf(markdown: string): string {
 }
 
 export function buildIndex(preamble: string, entries: IndexEntry[]): string {
-  const links = entries.map((e) => `- [${e.title}](${e.relPath})`).join('\n');
+  const links = entries
+    .map((e) => (e.cue && e.cue.length > 0 ? `- [${e.title}](${e.relPath}) — ${e.cue}` : `- [${e.title}](${e.relPath})`))
+    .join('\n');
   return [BANNER, preamble.trim(), '## Contents', links].join('\n\n') + '\n';
 }
 

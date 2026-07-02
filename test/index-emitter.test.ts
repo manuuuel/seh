@@ -23,6 +23,18 @@ describe('buildIndex', () => {
   });
 });
 
+describe('buildIndex cues', () => {
+  it('appends a cue after the link when present', () => {
+    const out = buildIndex('# P\n\nintro', [
+      { title: 'TypeScript Guidelines', relPath: '.seh/stack/typescript.md', cue: 'Read before writing TypeScript code.' },
+      { title: 'Glossary', relPath: '.seh/domain/glossary.md' },
+    ]);
+    expect(out).toContain('- [TypeScript Guidelines](.seh/stack/typescript.md) — Read before writing TypeScript code.');
+    expect(out).toContain('- [Glossary](.seh/domain/glossary.md)\n');
+    expect(out).not.toContain('Glossary](.seh/domain/glossary.md) —');
+  });
+});
+
 describe('buildDocument', () => {
   const out = buildDocument('# G\nPreamble.', ['# A\nalpha body', '# B\nbeta body']);
   it('starts with the banner', () => expect(out.startsWith(BANNER)).toBe(true));

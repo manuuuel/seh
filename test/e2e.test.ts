@@ -6,6 +6,7 @@ import path from 'node:path';
 import { runInitGlobal } from '../src/commands/initGlobal.js';
 import { runInitProject } from '../src/commands/initProject.js';
 import { runCheck } from '../src/commands/check.js';
+import { linkTool, isLinked } from '../src/links.js';
 
 describe('e2e v2', () => {
   it('global init writes one unified file; project init syncs with no drift', () => {
@@ -19,8 +20,28 @@ describe('e2e v2', () => {
 
     const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sehe2eP-'));
     runInitProject({ root, technologies: ['typescript', 'python'] });
-    expect(fs.existsSync(path.join(root, 'AGENTS.md'))).toBe(true);
+    expect(fs.existsSync(path.join(root, '.seh', 'AGENTS.md'))).toBe(true);
     expect(fs.existsSync(path.join(root, '.seh', 'stack', 'python.md'))).toBe(true);
+    expect(fs.existsSync(path.join(root, '.seh', 'stack', 'typescript.md'))).toBe(true);
     expect(runCheck({ root }).ok).toBe(true);
+  });
+
+  it('wires global and project symlinks for a multi-tool selection', () => {
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'sehe2eH-'));
+    const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'sehe2eP-'));
+
+    // 1) global init with several tools
+    runInitGlobal({ home, tools: ['claude','codex','pi','gemini','opencode','copilot'] });
+    for (const t of ['claude','codex','pi','gemini','opencode','copilot']) linkTool('global', t, home);
+    // copilot has no global target -> not linked; the rest resolve
+    expect(isLinked('global','codex',home)).toBe(true);
+    expect(isLinked('global','gemini',home)).toBe(true);
+    expect(isLinked('global','copilot',home)).toBe(false);
+
+    // 2) project init resolves project symlinks from config tools
+    runInitProject({ root: repo, technologies: ['typescript'], projectTools: ['codex','gemini','copilot'], home });
+    expect(fs.realpathSync(path.join(repo,'AGENTS.md'))).toBe(fs.realpathSync(path.join(repo,'.seh','AGENTS.md')));
+    expect(fs.realpathSync(path.join(repo,'GEMINI.md'))).toBe(fs.realpathSync(path.join(repo,'.seh','AGENTS.md')));
+    expect(fs.realpathSync(path.join(repo,'.github','copilot-instructions.md'))).toBe(fs.realpathSync(path.join(repo,'.seh','AGENTS.md')));
   });
 });

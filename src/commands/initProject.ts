@@ -24,6 +24,8 @@ export function runInitProject(opts: {
   root: string;
   technologies: string[];
   force?: boolean;
+  projectTools?: string[];
+  home?: string;
 }): { created: string[]; skipped: string[]; synced: string[] } {
   if (opts.technologies.length === 0) throw new Error('Select at least one technology');
   for (const t of opts.technologies) {
@@ -42,6 +44,11 @@ export function runInitProject(opts: {
     created.push(file.relPath);
   }
 
-  const { written } = runSync({ root: opts.root, technologies: opts.technologies });
+  const { written } = runSync({
+    root: opts.root,
+    technologies: opts.technologies,
+    projectTools: opts.projectTools,
+    home: opts.home,
+  });
   return { created, skipped, synced: written };
 }

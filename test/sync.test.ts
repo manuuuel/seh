@@ -36,4 +36,19 @@ describe('runSync', () => {
     const gi2 = fs.readFileSync(path.join(r, '.gitignore'), 'utf8');
     expect(gi2.match(/seh — generated tool symlinks/g)?.length).toBe(1);
   });
+  it('writes stack modules and lock file', () => {
+    const r = repoWithProject();
+    const res = runSync({ root: r, technologies: ['typescript'], projectTools: [] });
+    expect(fs.existsSync(path.join(r, '.seh', 'stack', 'typescript.md'))).toBe(true);
+    expect(res.written).toContain('.seh/AGENTS.md');
+    expect(res.written).toContain('seh.lock');
+    const lock = JSON.parse(fs.readFileSync(path.join(r, 'seh.lock'), 'utf8'));
+    expect(lock.version).toBe('0.2.0');
+    expect(lock.technologies).toEqual(['typescript']);
+  });
+  it('throws on unknown technology', () => {
+    const r = repoWithProject();
+    expect(() => runSync({ root: r, technologies: ['cobol'], projectTools: [] }))
+      .toThrow('Unknown technology: cobol');
+  });
 });

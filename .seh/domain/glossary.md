@@ -1,0 +1,30 @@
+# Glossary
+<!-- Consult when you hit an unfamiliar domain term. -->
+
+- **Harness** — the set of context files `seh` generates so AI agents load
+  consistent guidance. Has two layers: global and project.
+- **Layer** — `global` (host-wide, `~/.seh/`) or `project` (per-repo, `.seh/`).
+  Most engine functions take a `layer` argument.
+- **Canonical file** — the single real source of truth for a layer:
+  `~/.seh/AGENTS.md` (global) and `<repo>/.seh/AGENTS.md` (project). Everything
+  else pointing at it is a symlink.
+- **Target** — the path a specific tool auto-loads (e.g. `~/.codex/AGENTS.md`,
+  `<repo>/GEMINI.md`). Defined in `GLOBAL_TARGETS` / `PROJECT_TARGETS`.
+- **Tool** — a supported AI coding agent: `claude`, `codex`, `pi`, `gemini`,
+  `opencode`, `copilot` (`SUPPORTED_TOOLS`).
+- **Global ruleset** — the fully-inlined `~/.seh/AGENTS.md`: every guardrail in
+  one document (Craftsmanship first), built by `buildDocument`.
+- **Project index** — the progressive-disclosure `<repo>/.seh/AGENTS.md`: a
+  directive preamble + linked modules, built by `buildIndex`.
+- **Module** — a focused project source file under `.seh/` (`project.md`,
+  `domain/*.md`, `stack/<tech>.md`) linked from the project index.
+- **When-to-read cue** — the short "read this when…" note appended after a
+  module link, so agents load it only when relevant (`stackCue`/`moduleCue`).
+- **Stack** — a supported technology with a bundled guideline module
+  (`SUPPORTED_TECHS`, `assets/stacks/<tech>.md`).
+- **Preamble** — the leading prose of a canonical file (`assets/core/*-preamble.md`).
+- **Drift** — generated output no longer matches its sources, or a project
+  symlink no longer resolves to the canonical file. `seh check` reports it.
+- **`seh.lock`** — records the selected technologies for a repo; drives `sync`.
+- **`config.json`** — `~/.seh/config.json`, the authoritative set of tools the
+  user wires; drives which project symlinks `sync` creates.

@@ -2,62 +2,79 @@
 
 Portable AI coding harness generator for Claude, Agents, and other tools.
 
-## Usage (v1)
+## Usage
 
-The `seh` CLI manages your project's AI coding harness — a set of context files (`.harness/`) that generate tool-specific entrypoints (`CLAUDE.md`, `AGENTS.md`, etc.).
+The `seh` CLI manages a modular AI coding harness across three layers:
 
-### Global initialization
+- **L0 — Core** (bundled): universal principles and base content.
+- **L1 — Global** (`~/.seh/`): authored once per developer; optional tool symlinks.
+- **L2 — Project** (`.seh/` + `AGENTS.md` index): per-repository context.
 
-Set up the host-level global harness at `~/.se-harness`:
+### Overview
+
+**AGENTS.md** is an **index** that links to modular content in `.seh/`:
+- **Global modules** (from `~/.seh/global/`): security, preferences.
+- **Domain modules** (`.seh/domain/`): architecture, glossary.
+- **Stack modules** (`.seh/stack/`): technology-specific guides (e.g., `typescript.md`, `python.md`).
+- **Project metadata** (`.seh/project.md`): purpose and goals.
+
+**Generated files must NOT be hand-edited.** Edit `.seh/` source files and run `seh sync` to regenerate.
+
+### Commands
+
+#### 1. Global initialization
+
+Set up the host-level harness at `~/.seh/`:
 
 ```bash
 seh init --global
 ```
 
 This creates:
-- `~/.se-harness/preferences.md` — your personal coding preferences (editor, style, workflows)
-- `~/.se-harness/config.json` — default adapter settings
+- `~/.seh/AGENTS.md` — global index
+- `~/.seh/global/security.md` — secure coding practices
+- `~/.seh/global/preferences.md` — your personal coding preferences (editor, style, workflows)
 
-### Project initialization
-
-In your project directory, create the `.harness/` structure:
+Optionally, create symlinks for tools:
 
 ```bash
-seh init
+seh link --tool claude --target ~/.config/claude
+```
+
+#### 2. Project initialization
+
+In your project directory, create the `.seh/` structure and choose technologies:
+
+```bash
+seh init --tech typescript,python
 ```
 
 This creates:
-- `.harness/project.md` — project purpose and goals
-- `.harness/architecture.md` — system design and structure
-- `.harness/stack.md` — technologies and dependencies
-- `.harness/conventions.md` — code style and patterns
+- `AGENTS.md` — project index (links to global + project modules)
+- `.seh/project.md` — project purpose and goals
+- `.seh/domain/architecture.md` — system design and structure
+- `.seh/domain/glossary.md` — domain terms and concepts
+- `.seh/stack/typescript.md` — TypeScript setup and conventions
+- `.seh/stack/python.md` — Python setup and conventions
+- `seh.lock` — provenance metadata
 
-After initialization, edit the `.harness/*.md` files to describe your project.
+**Supported technologies:** `javascript`, `typescript`, `python`, `go`, `c`, `rust`, `java`
 
-### Sync: Generate tool entrypoints
+After initialization, edit the `.seh/*.md` files to describe your project.
 
-After editing `.harness/` sources, regenerate the tool-specific files:
+#### 3. Sync: Regenerate index
+
+After editing `.seh/` sources, regenerate the index:
 
 ```bash
 seh sync
 ```
 
-This writes:
-- `CLAUDE.md` — context for Claude Code
-- `AGENTS.md` — context for the Agents framework
-- `harness.lock` — provenance metadata
+This rewrites `AGENTS.md` and updates `seh.lock`. The index remains portable (no absolute paths).
 
-**Important:** Generated files (`CLAUDE.md`, `AGENTS.md`) must **NOT** be hand-edited. They are automatically composed from:
-- **L0 — Core** (bundled `assets/core/*`): universal principles + agent base.
-- **L1 — Global** (`~/.se-harness/preferences.md`): your personal defaults.
-- **L2 — Project** (`.harness/*.md`): this repository's context.
-- Precedence: **L2 > L1 > L0** (project overrides global overrides core).
+#### 4. Check: Detect drift
 
-To make changes, edit the `.harness/` source files and re-run `seh sync`.
-
-### Check: Detect drift
-
-Verify that generated files are in sync with `.harness/` sources:
+Verify that `AGENTS.md` and `seh.lock` are in sync with `.seh/` sources:
 
 ```bash
 seh check
@@ -65,14 +82,16 @@ seh check
 
 Exits with code 0 if no drift; code 1 if files are stale or missing. Run `seh sync` to fix drift.
 
-### Custom adapters
+#### 5. Link: Create tool symlinks
 
-By default, `seh sync` and `seh check` generate `CLAUDE.md` and `AGENTS.md`. To use a different set:
+Create symlinks from tool directories to `AGENTS.md`:
 
 ```bash
-seh sync --adapters claude
-seh check --adapters claude,agents
+seh link --tool claude --target ~/.config/claude
+seh link --tool claude --target .  # create CLAUDE.md symlink in current dir
 ```
+
+Supported tools: `claude` (creates `CLAUDE.md` symlink).
 
 ## Installation
 

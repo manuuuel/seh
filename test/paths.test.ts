@@ -1,18 +1,21 @@
-// test/paths.test.ts
 import { describe, it, expect } from 'vitest';
 import * as p from '../src/paths.js';
 
-describe('paths', () => {
-  it('builds global paths under ~/.se-harness', () => {
-    expect(p.globalDir('/home/x')).toBe('/home/x/.se-harness');
-    expect(p.globalPrefsFile('/home/x')).toBe('/home/x/.se-harness/preferences.md');
-    expect(p.globalConfigFile('/home/x')).toBe('/home/x/.se-harness/config.json');
+describe('paths (v2)', () => {
+  it('builds host global paths under ~/.seh', () => {
+    expect(p.globalDir('/h')).toBe('/h/.seh');
+    expect(p.globalIndexFile('/h')).toBe('/h/.seh/AGENTS.md');
+    expect(p.globalModulesDir('/h')).toBe('/h/.seh/global');
+    expect(p.globalConfigFile('/h')).toBe('/h/.seh/config.json');
+    expect(p.claudeGlobalFile('/h')).toBe('/h/.claude/CLAUDE.md');
   });
-  it('builds project paths', () => {
-    expect(p.projectHarnessDir('/repo')).toBe('/repo/.harness');
-    expect(p.lockFile('/repo')).toBe('/repo/harness.lock');
+  it('builds project paths under .seh', () => {
+    expect(p.projectSehDir('/r')).toBe('/r/.seh');
+    expect(p.projectIndexFile('/r')).toBe('/r/AGENTS.md');
+    expect(p.projectStackDir('/r')).toBe('/r/.seh/stack');
+    expect(p.lockFile('/r')).toBe('/r/seh.lock');
   });
-  it('resolves an existing assets dir', () => {
+  it('resolves assets dir', () => {
     expect(p.assetsDir().endsWith('assets')).toBe(true);
   });
 });

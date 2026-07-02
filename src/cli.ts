@@ -41,7 +41,12 @@ export function buildProgram(): Command {
               type: 'multiselect', name: 'tools', message: 'Symlink into which tools?',
               choices: Object.keys(TOOL_TARGETS).map((t) => ({ title: t, value: t })),
             });
-            tools = res.tools ?? [];
+            if (res.tools === undefined) {
+              console.log('seh: cancelled.');
+              process.exitCode = 0;
+              return;
+            }
+            tools = res.tools;
           }
           const out = runInitGlobal({ home: os.homedir(), tools, force: opts.force });
           for (const t of tools) linkTool(t, os.homedir());
@@ -59,7 +64,12 @@ export function buildProgram(): Command {
               choices: SUPPORTED_TECHS.map((t) => ({ title: t, value: t, selected: detected.includes(t) })),
               min: 1,
             });
-            techs = res.techs ?? [];
+            if (res.techs === undefined) {
+              console.log('seh: cancelled.');
+              process.exitCode = 0;
+              return;
+            }
+            techs = res.techs;
           }
         }
         const out = runInitProject({ root, technologies: techs, force: opts.force });

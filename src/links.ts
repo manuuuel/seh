@@ -16,7 +16,7 @@ export function linkTool(tool: string, home?: string): void {
   const target = targetFor(tool, home);
   const source = globalIndexFile(home);
   fs.mkdirSync(path.dirname(target), { recursive: true });
-  if (fs.existsSync(target) || fs.lstatSync(target, { throwIfNoEntry: false })) {
+  if (fs.lstatSync(target, { throwIfNoEntry: false })) {
     fs.rmSync(target, { force: true });
   }
   fs.symlinkSync(source, target);

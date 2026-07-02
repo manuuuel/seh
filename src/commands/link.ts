@@ -14,7 +14,14 @@ export function runLink(opts: {
 
   const tools = Object.keys(TOOL_TARGETS).filter((t) => isLinked(t, opts.home));
   const cfgPath = globalConfigFile(opts.home);
-  const cfg = fs.existsSync(cfgPath) ? JSON.parse(fs.readFileSync(cfgPath, 'utf8')) : {};
+  let cfg: any = {};
+  if (fs.existsSync(cfgPath)) {
+    try {
+      cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8'));
+    } catch (err) {
+      throw new Error(`Malformed config.json: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
   cfg.tools = tools;
   fs.writeFileSync(cfgPath, JSON.stringify(cfg, null, 2) + '\n');
 

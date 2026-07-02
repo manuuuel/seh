@@ -2,8 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { projectSehDir, projectStackDir, projectIndexFile, lockFile } from '../paths.js';
 import { stackModule, projectPreamble } from '../catalog.js';
-import { buildIndex, type IndexEntry } from '../index-emitter.js';
-import { titleOf } from './initGlobal.js';
+import { buildIndex, type IndexEntry, titleOf } from '../index-emitter.js';
+import { SUPPORTED_TECHS } from '../catalog.js';
+import type { LockFile } from '../types.js';
 
 const VERSION = '0.2.0';
 
@@ -31,6 +32,13 @@ export function runSync(opts: {
   root: string;
   technologies: string[];
 }): { written: string[] } {
+  // Validate technologies
+  for (const tech of opts.technologies) {
+    if (!(SUPPORTED_TECHS as readonly string[]).includes(tech)) {
+      throw new Error(`Unknown technology: ${tech}`);
+    }
+  }
+
   const written: string[] = [];
   const stackDir = projectStackDir(opts.root);
   fs.mkdirSync(stackDir, { recursive: true });
@@ -46,7 +54,7 @@ export function runSync(opts: {
   fs.writeFileSync(projectIndexFile(opts.root), buildProjectIndex(opts.root, opts.technologies));
   written.push('AGENTS.md');
 
-  const lock = { version: VERSION, technologies: opts.technologies, generatedAt: new Date().toISOString() };
+  const lock: LockFile = { version: VERSION, technologies: opts.technologies, generatedAt: new Date().toISOString() };
   fs.writeFileSync(lockFile(opts.root), JSON.stringify(lock, null, 2) + '\n');
   written.push('seh.lock');
 

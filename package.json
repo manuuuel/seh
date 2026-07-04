@@ -6,7 +6,7 @@
   "bin": { "seh": "dist/cli.js" },
   "files": ["dist", "assets"],
   "license": "MIT",
-  "author": "Manuel Di Pietro",
+  "author": "manuuuel",
   "repository": { "type": "git", "url": "git+https://github.com/manuuuel/seh.git" },
   "homepage": "https://github.com/manuuuel/seh#readme",
   "bugs": { "url": "https://github.com/manuuuel/seh/issues" },

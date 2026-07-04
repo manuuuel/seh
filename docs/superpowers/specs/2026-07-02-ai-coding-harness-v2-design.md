@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-02
 **Status:** Approved for planning
-**Owner:** Manuel Di Pietro
+**Owner:** manuuuel
 **Supersedes:** 2026-07-01-ai-coding-harness-design.md (single-file model)
 
 A reusable, tool-agnostic framework for developing software with AI coding agents

@@ -2,7 +2,7 @@
 
 **Date:** 2026-07-02
 **Status:** Approved for planning
-**Owner:** Manuel Di Pietro
+**Owner:** manuuuel
 **Extends:** 2026-07-02-ai-coding-harness-v2-design.md
 
 Make the harness files that `seh` generates actually load in every supported

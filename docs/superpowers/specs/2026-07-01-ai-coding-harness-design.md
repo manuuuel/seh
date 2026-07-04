@@ -6,7 +6,7 @@
 
 **Date:** 2026-07-01
 **Status:** Superseded by v2
-**Owner:** Manuel Di Pietro
+**Owner:** manuuuel
 
 A reusable, tool-agnostic framework for developing software with AI coding
 agents and CLI assistants (Claude Code, Codex, Copilot, Cursor, OpenCode, and

@@ -13,6 +13,7 @@
 ## Types & correctness
 - Prefer safe Rust; every `unsafe` block is minimal, justified, and documents its invariants.
 - Lean on the type system (`Option`, lifetimes) instead of runtime checks.
+- Represent money as integer minor units or a decimal crate — never floats; handle time zones explicitly (`chrono`/`time`).
 
 ## Error handling
 - Return `Result` and use `?`; `thiserror` for libraries, `anyhow` for applications. Avoid `unwrap()`/`expect()` in library code (only where truly infallible, with a reason).

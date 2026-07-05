@@ -17,6 +17,7 @@
 ## Types & correctness
 - Always ESM/strict — no implicit globals. Use `===`, never `==`.
 - JS has no compile-time types: validate external shapes at boundaries with a schema validator.
+- Represent money as integer minor units or a decimal library — never floats; store dates in UTC and use timezone-aware handling, not ad-hoc local `Date` math.
 
 ## Error handling
 - Use `async/await`; never leave a promise rejection unhandled. Guard awaited calls that can fail.
@@ -29,6 +30,7 @@
 ## Dependencies & security
 - Minimize dependencies: prefer the standard library and platform APIs; justify every addition and keep the tree small.
 - Pin via lockfile and audit regularly. Avoid `eval`/`new Function`, prototype pollution, and dynamic import/require of untrusted input.
+- Treat installing a dependency as running its code: review new deps and their install scripts; keep versions pinned.
 
 ## Performance & concurrency
 - The event loop is single-threaded: never block it; offload CPU-heavy work to worker threads.

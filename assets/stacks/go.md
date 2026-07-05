@@ -13,6 +13,7 @@
 ## Types & correctness
 - Handle every error explicitly; wrap with `%w` for context; no naked `_ =` discards on errors.
 - Compare with `errors.Is`/`errors.As`; expose sentinel or typed errors at boundaries.
+- Represent money as integer minor units; use `time.Time` with explicit locations, not ambiguous local time.
 
 ## Error handling
 - Return errors rather than panicking across boundaries; `panic` only for truly unrecoverable state. Use `defer` for cleanup.
@@ -27,6 +28,7 @@
 ## Performance & concurrency
 - Give every goroutine clear ownership and a way to stop; pass `context.Context` for cancellation and never store it in a struct.
 - Protect shared state with channels or `sync`; avoid goroutine leaks. Measure before optimizing.
+- Bound and await goroutines with `errgroup`/`sync.WaitGroup`; always honor `ctx` deadlines and cancellation.
 
 ## Observability
 - Structured logging with `log/slog` (no secrets/PII); propagate context.

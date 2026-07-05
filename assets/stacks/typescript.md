@@ -5,6 +5,7 @@
 ## Toolchain & project layout
 - `tsconfig.json` is authoritative with `strict: true`; never weaken it to make code pass.
 - Choose `moduleResolution` to match the runtime (`nodenext`/`bundler`); emit declarations for libraries and keep build output out of VCS.
+- Enable `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes` for real index/optional safety.
 
 ## Formatting & linting
 - Use `typescript-eslint` with type-aware rules enabled; the project config wins. Same formatter as JavaScript.

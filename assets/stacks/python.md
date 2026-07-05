@@ -13,6 +13,7 @@
 
 ## Types & correctness
 - Run `mypy`/`pyright` where configured and type public functions. Never use a mutable default argument.
+- Use `Decimal` for money (never `float`); use timezone-aware `datetime` in UTC, not naive local times.
 
 ## Error handling
 - Raise specific exceptions; never a bare `except:` (and don't catch `Exception` without handling or re-raising). Use `finally`/context managers for cleanup.
@@ -26,6 +27,7 @@
 
 ## Performance & concurrency
 - Mind the GIL: `asyncio` or threads for I/O-bound work, processes for CPU-bound. Prefer built-in data structures; measure before optimizing.
+- In `async` code never run blocking/sync I/O or CPU-bound work on the loop — offload to a thread/process executor.
 
 ## Observability
 - Use the `logging` module (structured where possible); no secrets/PII. Never `print` for diagnostics.

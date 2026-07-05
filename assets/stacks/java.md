@@ -12,6 +12,7 @@
 
 ## Types & correctness
 - Return `Optional<T>` instead of null; validate arguments at boundaries (`Objects.requireNonNull`). Avoid raw generic types.
+- Honor the `equals`/`hashCode`/`compareTo` contracts. Use `BigDecimal` for money (never `double`) and `java.time` with explicit zones.
 
 ## Error handling
 - Throw specific exceptions; never swallow. Use unchecked exceptions for programming errors, checked where the caller can recover. Clean up with try-with-resources.
@@ -24,7 +25,7 @@
 - Lock versions (a BOM) and scan (OWASP dependency-check). Validate external input; avoid unsafe deserialization.
 
 ## Performance & concurrency
-- Prefer `java.util.concurrent` (executors, concurrent collections) over raw threads/`synchronized`; share immutable data. Measure before optimizing.
+- Prefer `java.util.concurrent` (executors, concurrent collections) and virtual threads for I/O-bound work over raw threads/`synchronized`; share immutable data. Measure before optimizing.
 
 ## Observability
 - Log via SLF4J (structured, no secrets/PII); never `System.out` or `printStackTrace`.

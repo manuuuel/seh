@@ -3,6 +3,7 @@
 ## Toolchain & project layout
 - Target a defined C standard (the project's is authoritative); build with a documented system (Make/CMake) and one clean entrypoint.
 - Separate headers and sources; keep public headers minimal and documented.
+- Build hardened where supported: `-D_FORTIFY_SOURCE=2`, `-fstack-protector-strong`, PIE/RELRO.
 
 ## Formatting & linting
 - Format with `clang-format`; run `clang-tidy` and compile `-Wall -Wextra -Werror` clean. The project config is authoritative.
@@ -13,6 +14,7 @@
 
 ## Types & correctness
 - Check every allocation and return value. Avoid undefined behavior (signed overflow, aliasing, out-of-bounds). Use fixed-width types (`stdint.h`) where size matters.
+- Watch integer promotion, conversion, and overflow; check lengths/sizes before arithmetic on untrusted input.
 
 ## Error handling
 - Report failures consistently (status codes / `errno`); free every resource on every path (goto-cleanup pattern). No leaks on error.

@@ -37,7 +37,11 @@ Every module uses the same section order (H2 `##` headings), tailored per langua
 
 ## Style rules
 
-- **Length:** ~30–50 lines per module; 2–4 sharp bullets per section.
+- **Length:** ~35–55 lines per module; 2–4 sharp bullets per section.
+- **Universal footguns:** every module also carries the high-danger, cross-language
+  hazards where relevant — money as integer minor-units/decimal (never floats),
+  timezone-aware datetimes, validate-at-boundaries, and supply-chain/hardening
+  specifics — folded into the existing 10 sections (no new sections).
 - **Hybrid tooling:** state the principle tool-agnostically, then name the current
   de-facto standard as the concrete recommendation, and note the project's already-
   configured tooling wins. Example phrasing: "Format with the standard formatter
@@ -69,7 +73,7 @@ Detection pairs them (a `tsconfig.json` project loads both). Therefore:
 ## Acceptance criteria
 
 - All 7 modules follow the 10-section template with the exact `# <Tech> Guidelines` H1.
-- Each is ~30–50 lines, imperative bullets, hybrid tooling phrasing.
+- Each is ~35–55 lines, imperative bullets, hybrid tooling phrasing.
 - Section 7 leads with dependency minimalism in every module.
 - `typescript.md` defers shared topics to `javascript.md` (no wholesale duplication) and includes the "JavaScript guidelines also apply" note.
 - `npm test` stays green (existing catalog/e2e tests unaffected); `npm run build` unaffected (content-only).

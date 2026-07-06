@@ -4,6 +4,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { runSync } from '../src/commands/sync.js';
 import { projectCanonicalIndex, projectIndexFile, projectGeminiFile, projectSehDir } from '../src/paths.js';
+import { PackageResolver } from '../src/package-resolver.js';
+import { packageTemplatesStackDir, packageProjectsDir } from '../src/paths.js';
 
 function repoWithProject() {
   const r = fs.mkdtempSync(path.join(os.tmpdir(), 'sehsync-'));
@@ -50,5 +52,39 @@ describe('runSync', () => {
     const r = repoWithProject();
     expect(() => runSync({ root: r, technologies: ['cobol'], projectTools: [] }))
       .toThrow('Unknown technology: cobol');
+  });
+});
+
+describe('runSync with resolver', () => {
+  it('uses package stack module when present', () => {
+    const r = repoWithProject();
+    const pkg = fs.mkdtempSync(path.join(os.tmpdir(), 'sehpkg-'));
+    fs.mkdirSync(packageTemplatesStackDir(pkg), { recursive: true });
+    fs.writeFileSync(path.join(packageTemplatesStackDir(pkg), 'typescript.md'), '# Custom TS\n');
+    const resolver = new PackageResolver(pkg);
+    runSync({ root: r, technologies: ['typescript'], projectTools: [], resolver });
+    const content = fs.readFileSync(path.join(r, '.seh', 'stack', 'typescript.md'), 'utf8');
+    expect(content).toBe('# Custom TS\n');
+  });
+
+  it('applies project overlay from package', () => {
+    const r = repoWithProject();
+    const repoName = path.basename(r);
+    const pkg = fs.mkdtempSync(path.join(os.tmpdir(), 'sehpkg-'));
+    const overlayDir = path.join(packageProjectsDir(pkg), repoName);
+    fs.mkdirSync(overlayDir, { recursive: true });
+    fs.writeFileSync(path.join(overlayDir, 'project.md'), '# Overlay Project\n');
+    const resolver = new PackageResolver(pkg);
+    const res = runSync({ root: r, technologies: ['typescript'], projectTools: [], resolver });
+    expect(fs.readFileSync(path.join(r, '.seh', 'project.md'), 'utf8')).toBe('# Overlay Project\n');
+    expect(res.written).toContain(path.join('.seh', 'project.md'));
+  });
+
+  it('no-ops overlay when no matching project in package', () => {
+    const r = repoWithProject();
+    const pkg = fs.mkdtempSync(path.join(os.tmpdir(), 'sehpkg-'));
+    fs.mkdirSync(packageProjectsDir(pkg), { recursive: true });
+    const resolver = new PackageResolver(pkg);
+    expect(() => runSync({ root: r, technologies: ['typescript'], projectTools: [], resolver })).not.toThrow();
   });
 });

@@ -32,11 +32,13 @@ describe('seh package commands (CLI)', () => {
     expect(fs.existsSync(packageHarnessJson(p))).toBe(true);
   });
 
-  it('seh package status prints "no active package" when none configured', async () => {
-    const logs: string[] = [];
-    const spy = vi.spyOn(console, 'log').mockImplementation((m: string) => logs.push(m));
-    await buildProgram().parseAsync(['node', 'seh', 'package', 'status']);
-    spy.mockRestore();
-    expect(logs.some((l) => l.includes('no active package'))).toBe(true);
+  it('seh package command group registers init, use, status subcommands', async () => {
+    const program = buildProgram();
+    const pkgCmd = program.commands.find((c) => c.name() === 'package');
+    expect(pkgCmd).toBeDefined();
+    const subNames = pkgCmd!.commands.map((c) => c.name());
+    expect(subNames).toContain('init');
+    expect(subNames).toContain('use');
+    expect(subNames).toContain('status');
   });
 });

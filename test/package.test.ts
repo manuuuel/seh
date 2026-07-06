@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { runPackageInit } from '../src/commands/package.js';
+import { runPackageInit, runPackageUse, runPackageStatus } from '../src/commands/package.js';
 import {
   packageHarnessJson,
   packageGlobalAgentsMd,
@@ -10,6 +10,7 @@ import {
   packageTemplatesStackDir,
   packageTemplatesProjectDir,
   packageProjectsDir,
+  globalConfigFile,
 } from '../src/paths.js';
 
 function tmpDir(): string {
@@ -92,5 +93,75 @@ describe('runPackageInit', () => {
     expect(created).toContain('global/AGENTS.md');
     expect(created).toContain('global/config.json');
     expect(created).toContain('templates/stack/typescript.md');
+  });
+});
+
+describe('runPackageUse', () => {
+  it('writes packagePath to ~/.seh/config.json', () => {
+    const base = tmpDir();
+    const home = tmpDir();
+    const p = path.join(base, 'my-harness');
+    runPackageInit({ packagePath: p, home });
+    runPackageUse({ packagePath: p, home });
+    const cfg = JSON.parse(fs.readFileSync(globalConfigFile(home), 'utf8'));
+    expect(cfg.packagePath).toBe(path.resolve(p));
+  });
+
+  it('preserves existing tools in config.json', () => {
+    const base = tmpDir();
+    const home = tmpDir();
+    fs.mkdirSync(path.join(home, '.seh'), { recursive: true });
+    fs.writeFileSync(globalConfigFile(home), JSON.stringify({ tools: ['claude', 'codex'] }));
+    const p = path.join(base, 'my-harness');
+    runPackageInit({ packagePath: p, home });
+    runPackageUse({ packagePath: p, home });
+    const cfg = JSON.parse(fs.readFileSync(globalConfigFile(home), 'utf8'));
+    expect(cfg.tools).toEqual(['claude', 'codex']);
+    expect(cfg.packagePath).toBe(path.resolve(p));
+  });
+
+  it('throws when path does not exist', () => {
+    const home = tmpDir();
+    expect(() => runPackageUse({ packagePath: '/nonexistent/path', home }))
+      .toThrow('does not exist');
+  });
+
+  it('throws when path has no harness.json', () => {
+    const home = tmpDir();
+    const p = tmpDir();
+    expect(() => runPackageUse({ packagePath: p, home }))
+      .toThrow('not a harness package');
+  });
+});
+
+describe('runPackageStatus', () => {
+  it('returns null packagePath when no config', () => {
+    const home = tmpDir();
+    const status = runPackageStatus({ home });
+    expect(status.packagePath).toBeNull();
+    expect(status.pkg).toBeNull();
+  });
+
+  it('returns null when config has no packagePath', () => {
+    const home = tmpDir();
+    fs.mkdirSync(path.join(home, '.seh'), { recursive: true });
+    fs.writeFileSync(globalConfigFile(home), JSON.stringify({ tools: [] }));
+    expect(runPackageStatus({ home }).packagePath).toBeNull();
+  });
+
+  it('returns package metadata and dir existence when active', () => {
+    const base = tmpDir();
+    const home = tmpDir();
+    const p = path.join(base, 'my-harness');
+    runPackageInit({ packagePath: p, home });
+    runPackageUse({ packagePath: p, home });
+    const status = runPackageStatus({ home });
+    expect(status.packagePath).toBe(path.resolve(p));
+    expect(status.pkg?.name).toBe('my-harness');
+    expect(status.pkg?.version).toBe('1.0.0');
+    expect(status.dirs['global/']).toBe(true);
+    expect(status.dirs['templates/stack/']).toBe(true);
+    expect(status.dirs['templates/project/']).toBe(true);
+    expect(status.dirs['projects/']).toBe(true);
   });
 });

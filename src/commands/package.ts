@@ -73,3 +73,58 @@ export function runPackageInit(opts: {
     ],
   };
 }
+
+export function runPackageUse(opts: {
+  packagePath: string;
+  home?: string;
+}): void {
+  const home = opts.home ?? os.homedir();
+  const resolved = path.resolve(opts.packagePath);
+
+  if (!fs.existsSync(resolved)) {
+    throw new Error(`path does not exist: ${resolved}`);
+  }
+  if (!fs.existsSync(packageHarnessJson(resolved))) {
+    throw new Error(`not a harness package (missing harness.json): ${resolved}`);
+  }
+
+  const cfgFile = globalConfigFile(home);
+  let cfg: GlobalConfig = { tools: [] };
+  if (fs.existsSync(cfgFile)) {
+    try { cfg = JSON.parse(fs.readFileSync(cfgFile, 'utf8')); } catch { /* keep default */ }
+  }
+  cfg.packagePath = resolved;
+  fs.mkdirSync(path.dirname(cfgFile), { recursive: true });
+  fs.writeFileSync(cfgFile, JSON.stringify(cfg, null, 2) + '\n');
+}
+
+export function runPackageStatus(opts: {
+  home?: string;
+}): { packagePath: string | null; pkg: HarnessPackage | null; dirs: Record<string, boolean> } {
+  const home = opts.home ?? os.homedir();
+  const cfgFile = globalConfigFile(home);
+  if (!fs.existsSync(cfgFile)) return { packagePath: null, pkg: null, dirs: {} };
+
+  let packagePath: string | null = null;
+  try {
+    const cfg: GlobalConfig = JSON.parse(fs.readFileSync(cfgFile, 'utf8'));
+    packagePath = cfg.packagePath ?? null;
+  } catch { /* */ }
+
+  if (!packagePath) return { packagePath: null, pkg: null, dirs: {} };
+
+  let pkg: HarnessPackage | null = null;
+  const hj = packageHarnessJson(packagePath);
+  if (fs.existsSync(hj)) {
+    try { pkg = JSON.parse(fs.readFileSync(hj, 'utf8')); } catch { /* */ }
+  }
+
+  const dirs: Record<string, boolean> = {
+    'global/': fs.existsSync(packageGlobalDir(packagePath)),
+    'templates/stack/': fs.existsSync(packageTemplatesStackDir(packagePath)),
+    'templates/project/': fs.existsSync(packageTemplatesProjectDir(packagePath)),
+    'projects/': fs.existsSync(packageProjectsDir(packagePath)),
+  };
+
+  return { packagePath, pkg, dirs };
+}

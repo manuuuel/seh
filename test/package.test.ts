@@ -94,6 +94,13 @@ describe('runPackageInit', () => {
     expect(created).toContain('global/config.json');
     expect(created).toContain('templates/stack/typescript.md');
   });
+
+  it('creates skills/ directory', () => {
+    const base = tmpDir();
+    const p = path.join(base, 'my-harness');
+    runPackageInit({ packagePath: p });
+    expect(fs.existsSync(path.join(p, 'skills'))).toBe(true);
+  });
 });
 
 describe('runPackageUse', () => {

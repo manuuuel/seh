@@ -31,3 +31,11 @@ export function assetsDir(): string {
   const here = path.dirname(fileURLToPath(import.meta.url));
   return path.resolve(here, '..', 'assets');
 }
+
+export const packageHarnessJson = (p: string) => path.join(p, 'harness.json');
+export const packageGlobalDir = (p: string) => path.join(p, 'global');
+export const packageGlobalAgentsMd = (p: string) => path.join(p, 'global', 'AGENTS.md');
+export const packageGlobalConfigJson = (p: string) => path.join(p, 'global', 'config.json');
+export const packageTemplatesStackDir = (p: string) => path.join(p, 'templates', 'stack');
+export const packageTemplatesProjectDir = (p: string) => path.join(p, 'templates', 'project');
+export const packageProjectsDir = (p: string) => path.join(p, 'projects');

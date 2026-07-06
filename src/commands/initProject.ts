@@ -3,6 +3,7 @@ import path from 'node:path';
 import { assetsDir } from '../paths.js';
 import { SUPPORTED_TECHS } from '../catalog.js';
 import { runSync } from './sync.js';
+import type { PackageResolver } from '../package-resolver.js';
 
 function templateFiles(): { relPath: string; content: string }[] {
   const base = path.join(assetsDir(), 'project-template');
@@ -26,6 +27,8 @@ export function runInitProject(opts: {
   force?: boolean;
   projectTools?: string[];
   home?: string;
+  resolver?: PackageResolver;
+  templateName?: string;
 }): { created: string[]; skipped: string[]; synced: string[] } {
   if (opts.technologies.length === 0) throw new Error('Select at least one technology');
   for (const t of opts.technologies) {
@@ -36,7 +39,10 @@ export function runInitProject(opts: {
 
   const created: string[] = [];
   const skipped: string[] = [];
-  for (const file of templateFiles()) {
+  const filesToScaffold = (opts.templateName && opts.resolver)
+    ? opts.resolver.projectTemplateFiles(opts.templateName)
+    : templateFiles();
+  for (const file of filesToScaffold) {
     const dest = path.join(opts.root, file.relPath);
     fs.mkdirSync(path.dirname(dest), { recursive: true });
     if (fs.existsSync(dest) && !opts.force) { skipped.push(file.relPath); continue; }
@@ -49,6 +55,7 @@ export function runInitProject(opts: {
     technologies: opts.technologies,
     projectTools: opts.projectTools,
     home: opts.home,
+    resolver: opts.resolver,
   });
   return { created, skipped, synced: written };
 }

@@ -12,6 +12,10 @@ function orderedGlobalSections(): string[] {
   return [...craft, ...rest].map((m) => m.content);
 }
 
+export function buildGlobalAgentsMd(): string {
+  return buildDocument(globalPreamble(), orderedGlobalSections());
+}
+
 export function runInitGlobal(opts: {
   home: string;
   tools?: string[];

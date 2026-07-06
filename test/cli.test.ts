@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { buildProgram } from '../src/cli.js';
-import { SUPPORTED_TOOLS } from '../src/links.js';
+import { SUPPORTED_AGENTS } from '../src/links.js';
 import { packageHarnessJson } from '../src/paths.js';
 
 describe('cli (v2)', () => {
@@ -17,10 +17,10 @@ describe('cli (v2)', () => {
     const names = buildProgram().commands.map((c) => c.name()).sort();
     expect(names).toEqual(['check', 'init', 'link', 'package', 'sync']);
   });
-  it('exposes all supported tools for global linking', () => {
-    expect([...SUPPORTED_TOOLS]).toContain('gemini');
-    expect([...SUPPORTED_TOOLS]).toContain('opencode');
-    expect([...SUPPORTED_TOOLS]).toContain('copilot');
+  it('exposes all supported agents', () => {
+    expect([...SUPPORTED_AGENTS]).toContain('gemini');
+    expect([...SUPPORTED_AGENTS]).toContain('opencode');
+    expect([...SUPPORTED_AGENTS]).toContain('copilot');
   });
 });
 

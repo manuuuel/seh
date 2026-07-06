@@ -12,7 +12,7 @@ function tmpHome() { return fs.mkdtempSync(path.join(os.tmpdir(), 'sehg-')); }
 describe('runInitGlobal (v2)', () => {
   it('writes a single unified global AGENTS.md with inline sections (not an index)', () => {
     const home = tmpHome();
-    const res = runInitGlobal({ home, tools: ['claude'] });
+    const res = runInitGlobal({ home, agents: ['claude'] });
     const idx = path.join(home, '.seh', 'AGENTS.md');
     expect(fs.existsSync(idx)).toBe(true);
     const c = fs.readFileSync(idx, 'utf8');
@@ -24,7 +24,7 @@ describe('runInitGlobal (v2)', () => {
     // global is one file: no separate module directory
     expect(fs.existsSync(path.join(home, '.seh', 'global'))).toBe(false);
     const cfg = JSON.parse(fs.readFileSync(path.join(home, '.seh', 'config.json'), 'utf8'));
-    expect(cfg.tools).toEqual(['claude']);
+    expect(cfg.agents).toEqual(['claude']);
     expect(res.created).toContain('AGENTS.md');
   });
   it('places the Craftsmanship section first', () => {

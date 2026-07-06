@@ -5,13 +5,18 @@ export type LockFile = {
 };
 
 export type GlobalConfig = {
-  tools: string[];
+  agents: string[];
   packagePath?: string;
 };
+
+export type SkillEntry =
+  | { type: 'vendor' }
+  | { type: 'reference'; source: string; ref: string };
 
 export type HarnessPackage = {
   name: string;
   version: string;
   description?: string;
   modelTag?: string;
+  skills?: Record<string, SkillEntry>;
 };

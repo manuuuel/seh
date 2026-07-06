@@ -10,9 +10,11 @@ import { runSync } from './commands/sync.js';
 import { runCheck } from './commands/check.js';
 import { runLink } from './commands/link.js';
 import { runPackageInit, runPackageUse, runPackageStatus } from './commands/package.js';
+import { runSkillsAdd, runSkillsUpdate, runSkillsList } from './commands/skills.js';
+import { runPackageInstall } from './commands/install.js';
 import { detectTechnologies } from './detect.js';
 import { SUPPORTED_TECHS } from './catalog.js';
-import { SUPPORTED_AGENTS, linkAgent, readConfiguredAgents } from './links.js';
+import { SUPPORTED_AGENTS, SKILL_TARGETS, linkAgent, readConfiguredAgents, readGlobalConfig } from './links.js';
 import { lockFile } from './paths.js';
 import { readResolver } from './package-resolver.js';
 import fs from 'node:fs';
@@ -148,6 +150,14 @@ export function buildProgram(): Command {
       } catch (err) { fail(err); }
     });
 
+  function parseSkillUrl(raw: string): { url: string; skillName: string } {
+    const ghShorthand = raw.match(/^github:([^/]+)\/([^/]+)$/);
+    if (ghShorthand) return { url: `https://github.com/${ghShorthand[1]}/${ghShorthand[2]}`, skillName: ghShorthand[2] };
+    const ghUrl = raw.match(/^https?:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?\/?$/);
+    if (ghUrl) return { url: raw, skillName: ghUrl[2] };
+    throw new Error(`Unsupported URL: ${raw}. Use https://github.com/owner/repo or github:owner/repo`);
+  }
+
   const pkg = program.command('package').description('Manage harness packages');
 
   pkg
@@ -184,6 +194,103 @@ export function buildProgram(): Command {
         if (status.pkg) console.log(`  name: ${status.pkg.name}  version: ${status.pkg.version}`);
         for (const [dir, exists] of Object.entries(status.dirs)) {
           console.log(`  ${exists ? '✓' : '✗'} ${dir}`);
+        }
+      } catch (err) { fail(err); }
+    });
+
+  pkg
+    .command('install')
+    .description('Install harness and/or skills from the active package onto this machine')
+    .option('--skills', 'install skills')
+    .option('--harness', 'install global harness (AGENTS.md + agent symlinks)')
+    .option('--all', 'install everything')
+    .option('--agents <list>', 'comma-separated agents to link skills into')
+    .option('-f, --force', 'overwrite existing files')
+    .action(async (opts: { skills?: boolean; harness?: boolean; all?: boolean; agents?: string; force?: boolean }) => {
+      try {
+        let agents = parseList(opts.agents);
+        if ((opts.skills || opts.all) && agents.length === 0) {
+          const configured = readGlobalConfig(os.homedir()).agents;
+          const res = await prompts({
+            type: 'multiselect', name: 'agents', message: 'Install skills into which agents?',
+            choices: SUPPORTED_AGENTS
+              .filter((a) => a in SKILL_TARGETS)
+              .map((a) => ({ title: a, value: a, selected: configured.includes(a) })),
+          });
+          if (res.agents === undefined) { console.log('seh: cancelled.'); process.exitCode = 0; return; }
+          agents = res.agents;
+        }
+        const result = runPackageInstall({
+          skills: opts.skills,
+          harness: opts.harness,
+          all: opts.all,
+          agents,
+          force: opts.force,
+          home: os.homedir(),
+        });
+        if (result.installedHarness) console.log('seh: harness installed');
+        if (result.installedSkills.length > 0) console.log(`seh: skills installed [${result.installedSkills.join(', ')}]`);
+      } catch (err) { fail(err); }
+    });
+
+  const skills = program.command('skills').description('Manage skills in the active harness package');
+
+  skills
+    .command('add <url>')
+    .description('Add a skill from a GitHub URL to the active package')
+    .option('--vendor', 'copy skill files into the package (committed to git)')
+    .option('--reference', 'track skill as external reference (fetched on install)')
+    .option('--ref <branch>', 'branch or tag (default: main)')
+    .option('-f, --force', 'overwrite existing skill')
+    .action(async (url: string, opts: { vendor?: boolean; reference?: boolean; ref?: string; force?: boolean }) => {
+      try {
+        const { url: resolvedUrl, skillName } = parseSkillUrl(url);
+        let type: 'vendor' | 'reference' | undefined;
+        if (opts.vendor) type = 'vendor';
+        else if (opts.reference) type = 'reference';
+        else {
+          const res = await prompts({
+            type: 'select', name: 'type', message: 'How to add this skill?',
+            choices: [
+              { title: 'Vendor (copy into package, commit to git)', value: 'vendor' },
+              { title: 'Reference (track externally, fetch on install)', value: 'reference' },
+            ],
+          });
+          if (res.type === undefined) { console.log('seh: cancelled.'); process.exitCode = 0; return; }
+          type = res.type as 'vendor' | 'reference';
+        }
+        const status = runPackageStatus({ home: os.homedir() });
+        if (!status.packagePath) throw new Error('No active package. Run `seh package use <path>` first.');
+        runSkillsAdd({ url: resolvedUrl, skillName, type, ref: opts.ref, packagePath: status.packagePath, force: opts.force });
+        console.log(`seh: skill '${skillName}' added (${type})`);
+      } catch (err) { fail(err); }
+    });
+
+  skills
+    .command('update [name]')
+    .description('Re-fetch referenced skill(s) from source')
+    .action((name: string | undefined) => {
+      try {
+        const status = runPackageStatus({ home: os.homedir() });
+        if (!status.packagePath) throw new Error('No active package.');
+        const { updated } = runSkillsUpdate({ skillName: name, packagePath: status.packagePath });
+        console.log(`seh: updated [${updated.join(', ') || 'none'}]`);
+      } catch (err) { fail(err); }
+    });
+
+  skills
+    .command('list')
+    .description('List skills in the active package')
+    .action(() => {
+      try {
+        const status = runPackageStatus({ home: os.homedir() });
+        if (!status.packagePath) { console.log('seh: no active package'); return; }
+        const { skills: list } = runSkillsList({ packagePath: status.packagePath });
+        if (list.length === 0) { console.log('seh: no skills'); return; }
+        for (const s of list) {
+          const src = s.source ? `  ${s.source} (${s.ref})` : '';
+          const disk = s.onDisk ? '✓' : '✗';
+          console.log(`  ${disk} ${s.name}  [${s.type}]${src}`);
         }
       } catch (err) { fail(err); }
     });

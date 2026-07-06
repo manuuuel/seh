@@ -15,7 +15,7 @@ describe('cli (v2)', () => {
   });
   it('registers the v2 commands', () => {
     const names = buildProgram().commands.map((c) => c.name()).sort();
-    expect(names).toEqual(['check', 'init', 'link', 'package', 'sync']);
+    expect(names).toEqual(['check', 'init', 'link', 'package', 'skills', 'sync']);
   });
   it('exposes all supported agents', () => {
     expect([...SUPPORTED_AGENTS]).toContain('gemini');
@@ -40,5 +40,25 @@ describe('seh package commands (CLI)', () => {
     expect(subNames).toContain('init');
     expect(subNames).toContain('use');
     expect(subNames).toContain('status');
+  });
+});
+
+describe('seh skills commands (CLI)', () => {
+  it('seh skills command group registers add, update, list subcommands', () => {
+    const program = buildProgram();
+    const skillsCmd = program.commands.find((c) => c.name() === 'skills');
+    expect(skillsCmd).toBeDefined();
+    const subNames = skillsCmd!.commands.map((c) => c.name());
+    expect(subNames).toContain('add');
+    expect(subNames).toContain('update');
+    expect(subNames).toContain('list');
+  });
+
+  it('seh package install command is registered', () => {
+    const program = buildProgram();
+    const pkgCmd = program.commands.find((c) => c.name() === 'package');
+    expect(pkgCmd).toBeDefined();
+    const subNames = pkgCmd!.commands.map((c) => c.name());
+    expect(subNames).toContain('install');
   });
 });

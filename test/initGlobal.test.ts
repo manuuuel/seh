@@ -4,6 +4,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { runInitGlobal } from '../src/commands/initGlobal.js';
+import { PackageResolver } from '../src/package-resolver.js';
+import { packageGlobalAgentsMd, packageGlobalDir } from '../src/paths.js';
 
 function tmpHome() { return fs.mkdtempSync(path.join(os.tmpdir(), 'sehg-')); }
 
@@ -36,5 +38,26 @@ describe('runInitGlobal (v2)', () => {
     runInitGlobal({ home });
     const res = runInitGlobal({ home });
     expect(res.skipped).toContain('AGENTS.md');
+  });
+});
+
+describe('runInitGlobal with resolver', () => {
+  it('uses package global/AGENTS.md when present in resolver', () => {
+    const home = tmpHome();
+    const pkg = fs.mkdtempSync(path.join(os.tmpdir(), 'sehpkg-'));
+    fs.mkdirSync(packageGlobalDir(pkg), { recursive: true });
+    fs.writeFileSync(packageGlobalAgentsMd(pkg), '# Package Rules\n');
+    const resolver = new PackageResolver(pkg);
+    runInitGlobal({ home, resolver });
+    const content = fs.readFileSync(path.join(home, '.seh', 'AGENTS.md'), 'utf8');
+    expect(content).toBe('# Package Rules\n');
+  });
+
+  it('falls back to bundled when resolver has no global/AGENTS.md', () => {
+    const home = tmpHome();
+    const resolver = new PackageResolver(fs.mkdtempSync(path.join(os.tmpdir(), 'sehpkg-')));
+    runInitGlobal({ home, resolver });
+    const content = fs.readFileSync(path.join(home, '.seh', 'AGENTS.md'), 'utf8');
+    expect(content).toContain('# Craftsmanship');
   });
 });

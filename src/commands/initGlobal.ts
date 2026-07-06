@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import { globalDir, globalIndexFile, globalConfigFile } from '../paths.js';
 import { globalModules, globalPreamble } from '../catalog.js';
 import { buildDocument } from '../index-emitter.js';
+import type { PackageResolver } from '../package-resolver.js';
 
 // Global sections, craftsmanship first (a forced, prominent principle), then the
 // rest in filename order.
@@ -20,6 +21,7 @@ export function runInitGlobal(opts: {
   home: string;
   tools?: string[];
   force?: boolean;
+  resolver?: PackageResolver;
 }): { created: string[]; skipped: string[] } {
   const created: string[] = [];
   const skipped: string[] = [];
@@ -30,7 +32,8 @@ export function runInitGlobal(opts: {
   if (fs.existsSync(idx) && !opts.force) {
     skipped.push('AGENTS.md');
   } else {
-    fs.writeFileSync(idx, buildDocument(globalPreamble(), orderedGlobalSections()));
+    const content = opts.resolver?.globalAgentsMd() ?? buildDocument(globalPreamble(), orderedGlobalSections());
+    fs.writeFileSync(idx, content);
     created.push('AGENTS.md');
   }
 

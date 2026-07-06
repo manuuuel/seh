@@ -14,7 +14,8 @@ import {
   packageTemplatesProjectDir,
   packageProjectsDir,
 } from '../paths.js';
-import type { GlobalConfig, HarnessPackage } from '../types.js';
+import type { HarnessPackage } from '../types.js';
+import { readGlobalConfig } from '../links.js';
 
 export function runPackageInit(opts: {
   packagePath: string;
@@ -49,7 +50,7 @@ export function runPackageInit(opts: {
     ? fs.readFileSync(existingGlobal, 'utf8')
     : buildGlobalAgentsMd();
   fs.writeFileSync(packageGlobalAgentsMd(p), globalContent);
-  fs.writeFileSync(packageGlobalConfigJson(p), JSON.stringify({ tools: [] }, null, 2) + '\n');
+  fs.writeFileSync(packageGlobalConfigJson(p), JSON.stringify({ agents: [] }, null, 2) + '\n');
 
   for (const tech of SUPPORTED_TECHS) {
     fs.writeFileSync(
@@ -89,10 +90,7 @@ export function runPackageUse(opts: {
   }
 
   const cfgFile = globalConfigFile(home);
-  let cfg: GlobalConfig = { tools: [] };
-  if (fs.existsSync(cfgFile)) {
-    try { cfg = JSON.parse(fs.readFileSync(cfgFile, 'utf8')); } catch { /* keep default */ }
-  }
+  const cfg = readGlobalConfig(home);
   cfg.packagePath = resolved;
   fs.mkdirSync(path.dirname(cfgFile), { recursive: true });
   fs.writeFileSync(cfgFile, JSON.stringify(cfg, null, 2) + '\n');
@@ -107,7 +105,7 @@ export function runPackageStatus(opts: {
 
   let packagePath: string | null = null;
   try {
-    const cfg: GlobalConfig = JSON.parse(fs.readFileSync(cfgFile, 'utf8'));
+    const cfg = readGlobalConfig(home);
     packagePath = cfg.packagePath ?? null;
   } catch { /* */ }
 

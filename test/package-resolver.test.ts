@@ -103,7 +103,7 @@ describe('readResolver', () => {
   it('returns inactive resolver when config has no packagePath', () => {
     const home = fs.mkdtempSync(path.join(os.tmpdir(), 'sehh-'));
     fs.mkdirSync(path.join(home, '.seh'), { recursive: true });
-    fs.writeFileSync(globalConfigFile(home), JSON.stringify({ tools: ['claude'] }));
+    fs.writeFileSync(globalConfigFile(home), JSON.stringify({ agents: ['claude'] }));
     expect(readResolver(home).active).toBe(false);
   });
 
@@ -111,7 +111,7 @@ describe('readResolver', () => {
     const home = fs.mkdtempSync(path.join(os.tmpdir(), 'sehh-'));
     const pkg = tmpPkg();
     fs.mkdirSync(path.join(home, '.seh'), { recursive: true });
-    fs.writeFileSync(globalConfigFile(home), JSON.stringify({ tools: [], packagePath: pkg }));
+    fs.writeFileSync(globalConfigFile(home), JSON.stringify({ agents: [], packagePath: pkg }));
     const r = readResolver(home);
     expect(r.active).toBe(true);
     expect(r.path).toBe(pkg);

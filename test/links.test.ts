@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { linkTool, unlinkTool, isLinked, SUPPORTED_TOOLS, readConfiguredTools } from '../src/links.js';
+import { linkAgent, unlinkAgent, isLinked, SUPPORTED_AGENTS, readConfiguredAgents } from '../src/links.js';
 import { globalDir, globalIndexFile, projectSehDir, projectCanonicalIndex,
   codexGlobalFile, projectCopilotFile, projectIndexFile } from '../src/paths.js';
 
@@ -20,25 +20,25 @@ function tmpRepo() {
 }
 
 describe('links (layer-aware)', () => {
-  it('lists all supported tools', () => {
-    expect([...SUPPORTED_TOOLS]).toEqual(['claude','codex','pi','gemini','opencode','copilot']);
+  it('lists all supported agents', () => {
+    expect([...SUPPORTED_AGENTS]).toEqual(['claude','codex','pi','gemini','opencode','copilot']);
   });
   it('creates and detects a global symlink', () => {
     const h = tmpHome();
-    linkTool('global', 'codex', h);
+    linkAgent('global', 'codex', h);
     expect(fs.lstatSync(codexGlobalFile(h)).isSymbolicLink()).toBe(true);
     expect(isLinked('global', 'codex', h)).toBe(true);
-    unlinkTool('global', 'codex', h);
+    unlinkAgent('global', 'codex', h);
     expect(isLinked('global', 'codex', h)).toBe(false);
   });
   it('creates a copilot global symlink', () => {
     const h = tmpHome();
-    linkTool('global', 'copilot', h);
+    linkAgent('global', 'copilot', h);
     expect(isLinked('global', 'copilot', h)).toBe(true);
   });
   it('creates nested project symlink for copilot', () => {
     const r = tmpRepo();
-    linkTool('project', 'copilot', r);
+    linkAgent('project', 'copilot', r);
     const target = projectCopilotFile(r);
     expect(fs.lstatSync(target).isSymbolicLink()).toBe(true);
     expect(fs.realpathSync(target)).toBe(fs.realpathSync(projectCanonicalIndex(r)));
@@ -46,14 +46,22 @@ describe('links (layer-aware)', () => {
   it('replaces a pre-existing real project file with a symlink', () => {
     const r = tmpRepo();
     fs.writeFileSync(projectIndexFile(r), 'stale real file');
-    linkTool('project', 'codex', r);
+    linkAgent('project', 'codex', r);
     expect(fs.lstatSync(projectIndexFile(r)).isSymbolicLink()).toBe(true);
   });
-  it('reads configured tools from global config', () => {
+  it('reads configured agents from global config', () => {
     const h = tmpHome();
-    fs.writeFileSync(path.join(globalDir(h), 'config.json'), JSON.stringify({ tools: ['codex','gemini'] }));
-    expect(readConfiguredTools(h)).toEqual(['codex','gemini']);
+    fs.writeFileSync(path.join(globalDir(h), 'config.json'), JSON.stringify({ agents: ['codex','gemini'] }));
+    expect(readConfiguredAgents(h)).toEqual(['codex','gemini']);
     const h2 = tmpHome();
-    expect(readConfiguredTools(h2)).toEqual([]);
+    expect(readConfiguredAgents(h2)).toEqual([]);
+  });
+  it('migrates tools → agents in config.json on read', () => {
+    const h = tmpHome();
+    fs.writeFileSync(path.join(globalDir(h), 'config.json'), JSON.stringify({ tools: ['claude'] }));
+    expect(readConfiguredAgents(h)).toEqual(['claude']);
+    const raw = JSON.parse(fs.readFileSync(path.join(globalDir(h), 'config.json'), 'utf8'));
+    expect(raw.agents).toEqual(['claude']);
+    expect(raw.tools).toBeUndefined();
   });
 });

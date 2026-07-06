@@ -39,7 +39,7 @@ describe('runInitProject (v2)', () => {
   });
   it('creates project symlinks when projectTools provided', () => {
     const r = fs.mkdtempSync(path.join(os.tmpdir(), 'sehip-'));
-    runInitProject({ root: r, technologies: ['typescript'], projectTools: ['codex'] });
+    runInitProject({ root: r, technologies: ['typescript'], projectAgents: ['codex'] });
     expect(fs.lstatSync(path.join(r, 'AGENTS.md')).isSymbolicLink()).toBe(true);
   });
 });

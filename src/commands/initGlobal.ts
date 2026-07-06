@@ -19,7 +19,7 @@ export function buildGlobalAgentsMd(): string {
 
 export function runInitGlobal(opts: {
   home: string;
-  tools?: string[];
+  agents?: string[];
   force?: boolean;
   resolver?: PackageResolver;
 }): { created: string[]; skipped: string[] } {
@@ -41,7 +41,7 @@ export function runInitGlobal(opts: {
   if (fs.existsSync(cfg) && !opts.force) {
     skipped.push('config.json');
   } else {
-    fs.writeFileSync(cfg, JSON.stringify({ tools: opts.tools ?? [] }, null, 2) + '\n');
+    fs.writeFileSync(cfg, JSON.stringify({ agents: opts.agents ?? [] }, null, 2) + '\n');
     created.push('config.json');
   }
 

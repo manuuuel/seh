@@ -25,7 +25,7 @@ export function runInitProject(opts: {
   root: string;
   technologies: string[];
   force?: boolean;
-  projectTools?: string[];
+  projectAgents?: string[];
   home?: string;
   resolver?: PackageResolver;
   templateName?: string;
@@ -53,7 +53,7 @@ export function runInitProject(opts: {
   const { written } = runSync({
     root: opts.root,
     technologies: opts.technologies,
-    projectTools: opts.projectTools,
+    projectAgents: opts.projectAgents,
     home: opts.home,
     resolver: opts.resolver,
   });

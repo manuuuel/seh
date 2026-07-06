@@ -111,12 +111,12 @@ describe('runPackageUse', () => {
     const base = tmpDir();
     const home = tmpDir();
     fs.mkdirSync(path.join(home, '.seh'), { recursive: true });
-    fs.writeFileSync(globalConfigFile(home), JSON.stringify({ tools: ['claude', 'codex'] }));
+    fs.writeFileSync(globalConfigFile(home), JSON.stringify({ agents: ['claude', 'codex'] }));
     const p = path.join(base, 'my-harness');
     runPackageInit({ packagePath: p, home });
     runPackageUse({ packagePath: p, home });
     const cfg = JSON.parse(fs.readFileSync(globalConfigFile(home), 'utf8'));
-    expect(cfg.tools).toEqual(['claude', 'codex']);
+    expect(cfg.agents).toEqual(['claude', 'codex']);
     expect(cfg.packagePath).toBe(path.resolve(p));
   });
 
@@ -145,7 +145,7 @@ describe('runPackageStatus', () => {
   it('returns null when config has no packagePath', () => {
     const home = tmpDir();
     fs.mkdirSync(path.join(home, '.seh'), { recursive: true });
-    fs.writeFileSync(globalConfigFile(home), JSON.stringify({ tools: [] }));
+    fs.writeFileSync(globalConfigFile(home), JSON.stringify({ agents: [] }));
     expect(runPackageStatus({ home }).packagePath).toBeNull();
   });
 

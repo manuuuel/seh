@@ -3,13 +3,12 @@ import path from 'node:path';
 import os from 'node:os';
 import { stackModule as bundledStackModule } from './catalog.js';
 import {
-  globalConfigFile,
   packageGlobalAgentsMd,
   packageTemplatesStackDir,
   packageProjectsDir,
   packageTemplatesProjectDir,
 } from './paths.js';
-import type { GlobalConfig } from './types.js';
+import { readGlobalConfig } from './links.js';
 
 export class PackageResolver {
   constructor(private readonly packagePath: string | null) {}
@@ -85,11 +84,9 @@ export class PackageResolver {
 }
 
 export function readResolver(home: string = os.homedir()): PackageResolver {
-  const cfg = globalConfigFile(home);
-  if (!fs.existsSync(cfg)) return new PackageResolver(null);
   try {
-    const c: GlobalConfig = JSON.parse(fs.readFileSync(cfg, 'utf8'));
-    return new PackageResolver(c.packagePath ?? null);
+    const cfg = readGlobalConfig(home);
+    return new PackageResolver(cfg.packagePath ?? null);
   } catch {
     return new PackageResolver(null);
   }

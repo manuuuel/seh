@@ -4,7 +4,7 @@ import path from 'node:path';
 import { projectSehDir, projectStackDir, projectCanonicalIndex, lockFile } from '../paths.js';
 import { stackModule, projectPreamble, stackCue, moduleCue, SUPPORTED_TECHS } from '../catalog.js';
 import { buildIndex, type IndexEntry, titleOf } from '../index-emitter.js';
-import { linkTool, readConfiguredTools, SUPPORTED_TOOLS } from '../links.js';
+import { linkAgent, readConfiguredAgents, SUPPORTED_AGENTS } from '../links.js';
 import type { LockFile } from '../types.js';
 import type { PackageResolver } from '../package-resolver.js';
 
@@ -50,7 +50,7 @@ function ensureGitignore(root: string): void {
 export function runSync(opts: {
   root: string;
   technologies: string[];
-  projectTools?: string[];
+  projectAgents?: string[];
   home?: string;
   resolver?: PackageResolver;
 }): { written: string[] } {
@@ -89,10 +89,10 @@ export function runSync(opts: {
     }
   }
 
-  const tools = (opts.projectTools ?? readConfiguredTools(opts.home ?? os.homedir()))
-    .filter((t) => (SUPPORTED_TOOLS as readonly string[]).includes(t));
-  if (tools.length > 0) {
-    for (const t of tools) linkTool('project', t, opts.root);
+  const agents = (opts.projectAgents ?? readConfiguredAgents(opts.home ?? os.homedir()))
+    .filter((a) => (SUPPORTED_AGENTS as readonly string[]).includes(a));
+  if (agents.length > 0) {
+    for (const a of agents) linkAgent('project', a, opts.root);
     ensureGitignore(opts.root);
   }
 

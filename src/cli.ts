@@ -12,7 +12,7 @@ import { runLink } from './commands/link.js';
 import { runPackageInit, runPackageUse, runPackageStatus } from './commands/package.js';
 import { detectTechnologies } from './detect.js';
 import { SUPPORTED_TECHS } from './catalog.js';
-import { SUPPORTED_TOOLS, linkTool, readConfiguredTools } from './links.js';
+import { SUPPORTED_AGENTS, linkAgent, readConfiguredAgents } from './links.js';
 import { lockFile } from './paths.js';
 import { readResolver } from './package-resolver.js';
 import fs from 'node:fs';
@@ -36,27 +36,27 @@ export function buildProgram(): Command {
     .option('-g, --global', 'set up the host-level global harness (~/.seh)')
     .option('-f, --force', 'overwrite existing files')
     .option('--tech <list>', 'comma-separated technologies (non-interactive)')
-    .option('--tools <list>', 'comma-separated tools to symlink (global, non-interactive)')
+    .option('--agents <list>', 'comma-separated agents to symlink (global, non-interactive)')
     .option('-y, --yes', 'accept detected technologies without prompting')
     .action(async (opts) => {
       try {
         if (opts.global) {
-          let tools = parseList(opts.tools);
-          if (!opts.yes && tools.length === 0) {
+          let agents = parseList(opts.agents);
+          if (!opts.yes && agents.length === 0) {
             const res = await prompts({
-              type: 'multiselect', name: 'tools', message: 'Symlink into which tools?',
-              choices: SUPPORTED_TOOLS.map((t) => ({ title: t, value: t })),
+              type: 'multiselect', name: 'agents', message: 'Symlink into which agents?',
+              choices: SUPPORTED_AGENTS.map((t) => ({ title: t, value: t })),
             });
-            if (res.tools === undefined) {
+            if (res.agents === undefined) {
               console.log('seh: cancelled.');
               process.exitCode = 0;
               return;
             }
-            tools = res.tools;
+            agents = res.agents;
           }
-          const out = runInitGlobal({ home: os.homedir(), tools, force: opts.force, resolver });
-          for (const t of tools) linkTool('global', t, os.homedir());
-          console.log(`seh: global ready [${out.created.join(', ')}] tools [${tools.join(', ') || 'none'}]`);
+          const out = runInitGlobal({ home: os.homedir(), agents, force: opts.force, resolver });
+          for (const t of agents) linkAgent('global', t, os.homedir());
+          console.log(`seh: global ready [${out.created.join(', ')}] agents [${agents.join(', ') || 'none'}]`);
           return;
         }
         const root = process.cwd();
@@ -102,7 +102,7 @@ export function buildProgram(): Command {
         const out = runInitProject({
           root, technologies: techs,
           force: opts.force,
-          projectTools: readConfiguredTools(os.homedir()),
+          projectAgents: readConfiguredAgents(os.homedir()),
           home: os.homedir(),
           resolver,
           templateName,
@@ -144,7 +144,7 @@ export function buildProgram(): Command {
     .action((opts) => {
       try {
         const res = runLink({ home: os.homedir(), add: parseList(opts.add), remove: parseList(opts.remove) });
-        console.log(`seh: linked [${res.tools.join(', ') || 'none'}]`);
+        console.log(`seh: linked [${res.agents.join(', ') || 'none'}]`);
       } catch (err) { fail(err); }
     });
 

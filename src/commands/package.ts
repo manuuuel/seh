@@ -13,6 +13,7 @@ import {
   packageTemplatesStackDir,
   packageTemplatesProjectDir,
   packageProjectsDir,
+  packageSkillsDir,
 } from '../paths.js';
 import type { HarnessPackage } from '../types.js';
 import { readGlobalConfig } from '../links.js';
@@ -34,6 +35,7 @@ export function runPackageInit(opts: {
     packageTemplatesStackDir(p),
     packageTemplatesProjectDir(p),
     packageProjectsDir(p),
+    packageSkillsDir(p),
   ]) {
     fs.mkdirSync(d, { recursive: true });
   }

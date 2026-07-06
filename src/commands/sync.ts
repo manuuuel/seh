@@ -6,6 +6,7 @@ import { stackModule, projectPreamble, stackCue, moduleCue, SUPPORTED_TECHS } fr
 import { buildIndex, type IndexEntry, titleOf } from '../index-emitter.js';
 import { linkTool, readConfiguredTools, SUPPORTED_TOOLS } from '../links.js';
 import type { LockFile } from '../types.js';
+import type { PackageResolver } from '../package-resolver.js';
 
 const VERSION = '0.2.0';
 const GITIGNORE_MARKER = '# seh — generated tool symlinks (regenerate with `seh sync`)';
@@ -51,6 +52,7 @@ export function runSync(opts: {
   technologies: string[];
   projectTools?: string[];
   home?: string;
+  resolver?: PackageResolver;
 }): { written: string[] } {
   for (const tech of opts.technologies) {
     if (!(SUPPORTED_TECHS as readonly string[]).includes(tech)) {
@@ -63,7 +65,8 @@ export function runSync(opts: {
   fs.mkdirSync(stackDir, { recursive: true });
 
   for (const tech of opts.technologies) {
-    fs.writeFileSync(path.join(stackDir, `${tech}.md`), stackModule(tech));
+    const content = opts.resolver ? opts.resolver.stackModule(tech) : stackModule(tech);
+    fs.writeFileSync(path.join(stackDir, `${tech}.md`), content);
     written.push(path.join('.seh', 'stack', `${tech}.md`));
   }
 
@@ -74,6 +77,17 @@ export function runSync(opts: {
   const lock: LockFile = { version: VERSION, technologies: opts.technologies, generatedAt: new Date().toISOString() };
   fs.writeFileSync(lockFile(opts.root), JSON.stringify(lock, null, 2) + '\n');
   written.push('seh.lock');
+
+  if (opts.resolver) {
+    const repoName = path.basename(opts.root);
+    for (const { relPath, content } of opts.resolver.projectOverlayFiles(repoName)) {
+      const dest = path.join(projectSehDir(opts.root), relPath);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.writeFileSync(dest, content);
+      const normalized = path.join('.seh', relPath);
+      if (!written.includes(normalized)) written.push(normalized);
+    }
+  }
 
   const tools = (opts.projectTools ?? readConfiguredTools(opts.home ?? os.homedir()))
     .filter((t) => (SUPPORTED_TOOLS as readonly string[]).includes(t));

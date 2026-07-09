@@ -1,8 +1,8 @@
 // test/index-emitter.test.ts
 import { describe, it, expect } from 'vitest';
-import { buildIndex, buildDocument, buildSkillsSection } from '../src/index-emitter.js';
+import { buildIndex, buildDocument, buildSkillsSection, buildMemorySection } from '../src/index-emitter.js';
 import { BANNER } from '../src/banner.js';
-import type { SkillEntry } from '../src/types.js';
+import type { SkillEntry, MemoryEntry } from '../src/types.js';
 
 describe('buildIndex', () => {
   const out = buildIndex('# Title\nPreamble text.', [
@@ -120,5 +120,98 @@ describe('buildSkillsSection', () => {
     const out = buildSkillsSection(skills);
     expect(out).toContain('`caveman`');
     expect(out).not.toContain('`xlsx`');
+  });
+});
+
+describe('buildMemorySection', () => {
+  it('returns protocol block only when entries array is empty', () => {
+    const out = buildMemorySection([]);
+    expect(out).toContain('## Memory');
+    expect(out).toContain('seh memory add');
+    expect(out).not.toContain('### Decisions');
+  });
+
+  it('renders protocol block always', () => {
+    const entries: MemoryEntry[] = [
+      { name: 'auth', type: 'decision', title: 'Auth strategy', relPath: '.seh/memory/auth.md' },
+    ];
+    const out = buildMemorySection(entries);
+    expect(out).toContain('**decision**');
+    expect(out).toContain('**constraint**');
+    expect(out).toContain('**learning**');
+    expect(out).toContain('**problem**');
+    expect(out).toContain('seh memory add <name>');
+  });
+
+  it('renders Decisions subsection', () => {
+    const entries: MemoryEntry[] = [
+      { name: 'auth', type: 'decision', title: 'Auth strategy', relPath: '.seh/memory/auth.md' },
+    ];
+    const out = buildMemorySection(entries);
+    expect(out).toContain('### Decisions');
+    expect(out).toContain('[Auth strategy](.seh/memory/auth.md)');
+  });
+
+  it('renders Constraints subsection', () => {
+    const entries: MemoryEntry[] = [
+      { name: 'url', type: 'constraint', title: 'URL structure', relPath: '.seh/memory/url.md' },
+    ];
+    const out = buildMemorySection(entries);
+    expect(out).toContain('### Constraints');
+    expect(out).toContain('[URL structure](.seh/memory/url.md)');
+  });
+
+  it('renders Learnings subsection', () => {
+    const entries: MemoryEntry[] = [
+      { name: 'jwt', type: 'learning', title: 'JWT expiry', relPath: '.seh/memory/jwt.md' },
+    ];
+    const out = buildMemorySection(entries);
+    expect(out).toContain('### Learnings');
+    expect(out).toContain('[JWT expiry](.seh/memory/jwt.md)');
+  });
+
+  it('renders Open problems subsection', () => {
+    const entries: MemoryEntry[] = [
+      { name: 'rate', type: 'problem', title: 'Rate limiting', relPath: '.seh/memory/rate.md' },
+    ];
+    const out = buildMemorySection(entries);
+    expect(out).toContain('### Open problems');
+    expect(out).toContain('[Rate limiting](.seh/memory/rate.md)');
+  });
+
+  it('renders all four subsections in order when all types present', () => {
+    const entries: MemoryEntry[] = [
+      { name: 'a', type: 'decision', title: 'D', relPath: '.seh/memory/a.md' },
+      { name: 'b', type: 'constraint', title: 'C', relPath: '.seh/memory/b.md' },
+      { name: 'c', type: 'learning', title: 'L', relPath: '.seh/memory/c.md' },
+      { name: 'd', type: 'problem', title: 'P', relPath: '.seh/memory/d.md' },
+    ];
+    const out = buildMemorySection(entries);
+    const dIdx = out.indexOf('### Decisions');
+    const cIdx = out.indexOf('### Constraints');
+    const lIdx = out.indexOf('### Learnings');
+    const pIdx = out.indexOf('### Open problems');
+    expect(dIdx).toBeLessThan(cIdx);
+    expect(cIdx).toBeLessThan(lIdx);
+    expect(lIdx).toBeLessThan(pIdx);
+  });
+
+  it('omits subsection when type has no entries', () => {
+    const entries: MemoryEntry[] = [
+      { name: 'a', type: 'decision', title: 'D', relPath: '.seh/memory/a.md' },
+    ];
+    const out = buildMemorySection(entries);
+    expect(out).not.toContain('### Constraints');
+    expect(out).not.toContain('### Learnings');
+    expect(out).not.toContain('### Open problems');
+  });
+
+  it('sorts entries alphabetically by title within each subsection', () => {
+    const entries: MemoryEntry[] = [
+      { name: 'z', type: 'decision', title: 'Zebra', relPath: '.seh/memory/z.md' },
+      { name: 'a', type: 'decision', title: 'Apple', relPath: '.seh/memory/a.md' },
+    ];
+    const out = buildMemorySection(entries);
+    expect(out.indexOf('Apple')).toBeLessThan(out.indexOf('Zebra'));
   });
 });

@@ -2,31 +2,33 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
   globalIndexFile, projectCanonicalIndex, globalConfigFile,
-  claudeGlobalFile, codexGlobalFile, piGlobalFile, geminiGlobalFile, opencodeGlobalFile, copilotGlobalFile,
-  projectIndexFile, projectClaudeFile, projectGeminiFile, projectCopilotFile,
+  claudeGlobalFile, codexGlobalFile, piGlobalFile, geminiGlobalFile, opencodeGlobalFile, copilotGlobalFile, agentsGlobalFile,
+  projectIndexFile, projectClaudeFile, projectGeminiFile, projectCopilotFile, projectAgentsFile,
 } from './paths.js';
 import type { GlobalConfig } from './types.js';
 
 export type Layer = 'global' | 'project';
 
-export const SUPPORTED_AGENTS = ['claude', 'codex', 'pi', 'gemini', 'opencode', 'copilot'] as const;
+export const SUPPORTED_AGENTS = ['claude', 'codex', 'pi', 'gemini', 'opencode', 'copilot', 'agents'] as const;
 
 const GLOBAL_TARGETS: Record<string, (base: string) => string> = {
-  claude: claudeGlobalFile,
-  codex: codexGlobalFile,
-  pi: piGlobalFile,
-  gemini: geminiGlobalFile,
+  claude:   claudeGlobalFile,
+  codex:    codexGlobalFile,
+  pi:       piGlobalFile,
+  gemini:   geminiGlobalFile,
   opencode: opencodeGlobalFile,
-  copilot: copilotGlobalFile,
+  copilot:  copilotGlobalFile,
+  agents:   agentsGlobalFile,
 };
 
 const PROJECT_TARGETS: Record<string, (base: string) => string> = {
-  claude: projectClaudeFile,
-  codex: projectIndexFile,
-  pi: projectIndexFile,
+  claude:   projectClaudeFile,
+  codex:    projectIndexFile,
+  pi:       projectIndexFile,
   opencode: projectIndexFile,
-  gemini: projectGeminiFile,
-  copilot: projectCopilotFile,
+  gemini:   projectGeminiFile,
+  copilot:  projectCopilotFile,
+  agents:   projectAgentsFile,
 };
 
 function targetFor(layer: Layer, agent: string, base: string): string | undefined {
@@ -105,7 +107,13 @@ export function readConfiguredAgents(home: string): string[] {
 }
 
 export const SKILL_TARGETS: Record<string, (home: string, skillName: string) => string> = {
-  claude: (home, name) => path.join(home, '.claude', 'skills', name),
+  claude:    (home, name) => path.join(home, '.claude', 'skills', name),
+  codex:     (home, name) => path.join(home, '.codex', 'skills', name),
+  gemini:    (home, name) => path.join(home, '.gemini', 'skills', name),
+  opencode:  (home, name) => path.join(home, '.config', 'opencode', 'skills', name),
+  pi:        (home, name) => path.join(home, '.pi', 'agent', 'skills', name),
+  copilot:   (home, name) => path.join(home, '.copilot', 'skills', name),
+  agents:    (home, name) => path.join(home, '.agents', 'skills', name),
 };
 
 export function linkSkill(agentName: string, skillName: string, home: string, sehSkillPath: string): void {

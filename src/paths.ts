@@ -26,6 +26,9 @@ export const piGlobalFile = (h: string = home()) => path.join(h, '.pi', 'agent',
 export const geminiGlobalFile = (h: string = home()) => path.join(h, '.gemini', 'GEMINI.md');
 export const opencodeGlobalFile = (h: string = home()) => path.join(h, '.config', 'opencode', 'AGENTS.md');
 export const copilotGlobalFile = (h: string = home()) => path.join(h, '.copilot', 'copilot-instructions.md');
+export const agentsGlobalFile = (h: string = home()) => path.join(h, '.agents', 'AGENTS.md');
+
+export const projectAgentsFile = (root: string) => path.join(root, '.agents', 'AGENTS.md');
 
 export function assetsDir(): string {
   const here = path.dirname(fileURLToPath(import.meta.url));

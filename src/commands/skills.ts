@@ -3,7 +3,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { execSync } from 'node:child_process';
 import { packageSkillDir, packageSkillsDir, packageHarnessJson } from '../paths.js';
-import type { HarnessPackage, SkillEntry } from '../types.js';
+import type { HarnessPackage, SkillEntry, SkillInvoke } from '../types.js';
 
 function copyDir(src: string, dest: string): void {
   fs.mkdirSync(dest, { recursive: true });
@@ -41,6 +41,7 @@ export function runSkillsAdd(opts: {
   ref?: string;
   packagePath: string;
   force?: boolean;
+  invoke?: SkillInvoke;
 }): void {
   const skillDir = packageSkillDir(opts.packagePath, opts.skillName);
 
@@ -61,13 +62,13 @@ export function runSkillsAdd(opts: {
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
-    harness.skills[opts.skillName] = { type: 'vendor' };
+    harness.skills[opts.skillName] = opts.invoke
+      ? { type: 'vendor', invoke: opts.invoke }
+      : { type: 'vendor' };
   } else {
-    harness.skills[opts.skillName] = {
-      type: 'reference',
-      source: opts.url,
-      ref: opts.ref ?? 'main',
-    };
+    harness.skills[opts.skillName] = opts.invoke
+      ? { type: 'reference', source: opts.url, ref: opts.ref ?? 'main', invoke: opts.invoke }
+      : { type: 'reference', source: opts.url, ref: opts.ref ?? 'main' };
     addToGitignore(opts.packagePath, `skills/${opts.skillName}/`);
   }
 
@@ -109,7 +110,7 @@ export function runSkillsUpdate(opts: {
 
 export function runSkillsList(opts: {
   packagePath: string;
-}): { skills: Array<{ name: string; type: string; source?: string; ref?: string; onDisk: boolean }> } {
+}): { skills: Array<{ name: string; type: string; source?: string; ref?: string; onDisk: boolean; invoke?: SkillInvoke }> } {
   const harness = readHarness(opts.packagePath);
   const skills = Object.entries(harness.skills ?? {}).map(([name, entry]) => ({
     name,
@@ -117,6 +118,7 @@ export function runSkillsList(opts: {
     source: entry.type === 'reference' ? entry.source : undefined,
     ref: entry.type === 'reference' ? entry.ref : undefined,
     onDisk: fs.existsSync(packageSkillDir(opts.packagePath, name)),
+    invoke: entry.invoke,
   }));
 
   const skillsDir = packageSkillsDir(opts.packagePath);

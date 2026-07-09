@@ -243,7 +243,7 @@ symlinks remain intact until re-pointed.
 
 ### Skill commands
 
-#### `seh skills add <url> [--vendor | --reference] [--ref <branch>]`
+#### `seh skills add <url> [--vendor | --reference] [--ref <branch>] [routing flag]`
 
 Adds a skill from a GitHub URL to the active package.
 
@@ -258,6 +258,23 @@ seh skills add github:you/my-skill --vendor --ref v1.2
 - Prompts for type if neither flag is given
 - Infers skill name from the repo name
 
+**Routing flags** tell agents when to invoke the skill. Exactly one may be used:
+
+| Flag | When agent invokes |
+|------|--------------------|
+| `--always [label]` | Every response |
+| `--when <condition>` | When the described scenario matches |
+| `--optional` | Agent decides based on context |
+
+```bash
+seh skills add github:you/caveman --vendor --always "every response"
+seh skills add github:you/systematic-debugging --vendor --when "bug / test failure / unexpected behavior"
+seh skills add github:you/xlsx --vendor --optional
+```
+
+Routing is stored in `harness.json` and rendered into a `## Skills` section in
+AGENTS.md by `seh sync`, so agents always know which skills to invoke and when.
+
 #### `seh skills update [name]`
 
 Re-fetches referenced skill(s) from their source. No arguments updates all
@@ -265,11 +282,13 @@ referenced skills. Errors if the named skill is vendored.
 
 #### `seh skills list`
 
-Shows skills in the active package:
+Shows skills in the active package with their routing mode:
 
 ```
-✓ brainstorming  [vendor]
-✗ caveman        [reference]  https://github.com/JuliusBrussee/caveman (ref: main)
+✓ brainstorming       [vendor]   always: before any implementation
+✓ systematic-debugging [vendor]  when: bug / test failure
+✗ caveman             [reference]  https://github.com/JuliusBrussee/caveman (ref: main)
+✓ xlsx                [vendor]   optional
 ```
 
 `✓` = files present on disk, `✗` = reference not yet fetched (run
@@ -282,15 +301,49 @@ Shows skills in the active package:
   "name": "my-harness",
   "version": "1.0.0",
   "skills": {
-    "brainstorming": { "type": "vendor" },
+    "brainstorming": {
+      "type": "vendor",
+      "invoke": { "mode": "always", "label": "before any implementation" }
+    },
+    "systematic-debugging": {
+      "type": "vendor",
+      "invoke": { "mode": "when", "condition": "bug / test failure / unexpected behavior" }
+    },
     "caveman": {
       "type": "reference",
       "source": "https://github.com/JuliusBrussee/caveman",
-      "ref": "main"
+      "ref": "main",
+      "invoke": { "mode": "always", "label": "every response" }
+    },
+    "xlsx": {
+      "type": "vendor",
+      "invoke": { "mode": "optional" }
     }
   }
 }
 ```
+
+### Skill routing in AGENTS.md
+
+`seh sync` appends a `## Skills` section to `.seh/AGENTS.md` when any skill has
+routing configured:
+
+```markdown
+## Skills
+
+Always invoke:
+- `brainstorming` — before any implementation
+- `caveman` — every response
+
+Invoke when:
+- `systematic-debugging` — bug / test failure / unexpected behavior
+
+Optional:
+- `xlsx`
+```
+
+Skills with no `invoke` field are omitted from this section. If no skills have
+routing, the section is omitted entirely.
 
 ---
 
@@ -353,7 +406,7 @@ npm run try
 ```bash
 npm install
 npm run build    # compile to dist/
-npm test         # run the test suite (130 tests)
+npm test         # run the test suite (155 tests)
 npm run dev      # run the CLI via tsx without building
 ```
 

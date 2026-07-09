@@ -3,7 +3,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { execSync } from 'node:child_process';
 import { packageSkillDir, packageSkillsDir, packageHarnessJson } from '../paths.js';
-import type { HarnessPackage, SkillEntry } from '../types.js';
+import type { HarnessPackage, SkillEntry, SkillInvoke } from '../types.js';
 
 function copyDir(src: string, dest: string): void {
   fs.mkdirSync(dest, { recursive: true });
@@ -41,6 +41,7 @@ export function runSkillsAdd(opts: {
   ref?: string;
   packagePath: string;
   force?: boolean;
+  invoke?: SkillInvoke;
 }): void {
   const skillDir = packageSkillDir(opts.packagePath, opts.skillName);
 
@@ -61,13 +62,17 @@ export function runSkillsAdd(opts: {
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
-    harness.skills[opts.skillName] = { type: 'vendor' };
+    const vendorEntry: SkillEntry = { type: 'vendor' };
+    if (opts.invoke) vendorEntry.invoke = opts.invoke;
+    harness.skills[opts.skillName] = vendorEntry;
   } else {
-    harness.skills[opts.skillName] = {
+    const refEntry: SkillEntry = {
       type: 'reference',
       source: opts.url,
       ref: opts.ref ?? 'main',
     };
+    if (opts.invoke) refEntry.invoke = opts.invoke;
+    harness.skills[opts.skillName] = refEntry;
     addToGitignore(opts.packagePath, `skills/${opts.skillName}/`);
   }
 

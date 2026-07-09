@@ -9,9 +9,14 @@ export type GlobalConfig = {
   packagePath?: string;
 };
 
+export type SkillInvoke =
+  | { mode: 'always'; label?: string }
+  | { mode: 'when'; condition: string }
+  | { mode: 'optional' };
+
 export type SkillEntry =
-  | { type: 'vendor' }
-  | { type: 'reference'; source: string; ref: string };
+  | { type: 'vendor'; invoke?: SkillInvoke }
+  | { type: 'reference'; source: string; ref: string; invoke?: SkillInvoke };
 
 export type HarnessPackage = {
   name: string;

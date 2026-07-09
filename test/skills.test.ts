@@ -68,6 +68,56 @@ describe('runSkillsAdd --vendor', () => {
     expect(() => runSkillsAdd({ url: `file://${repo}`, skillName: 'dup', type: 'vendor', packagePath: pkg, force: true }))
       .not.toThrow();
   });
+
+  it('stores invoke.always in harness.json', () => {
+    const pkg = tmpPkg();
+    const repo = tmpGitRepo('skill.md', '# X\n');
+    runSkillsAdd({
+      url: `file://${repo}`,
+      skillName: 'myskill',
+      type: 'vendor',
+      packagePath: pkg,
+      invoke: { mode: 'always', label: 'every response' },
+    });
+    const harness = JSON.parse(fs.readFileSync(packageHarnessJson(pkg), 'utf8'));
+    expect(harness.skills?.myskill?.invoke).toEqual({ mode: 'always', label: 'every response' });
+  });
+
+  it('stores invoke.when in harness.json', () => {
+    const pkg = tmpPkg();
+    const repo = tmpGitRepo('skill.md', '# X\n');
+    runSkillsAdd({
+      url: `file://${repo}`,
+      skillName: 'myskill',
+      type: 'vendor',
+      packagePath: pkg,
+      invoke: { mode: 'when', condition: 'bug / test failure' },
+    });
+    const harness = JSON.parse(fs.readFileSync(packageHarnessJson(pkg), 'utf8'));
+    expect(harness.skills?.myskill?.invoke).toEqual({ mode: 'when', condition: 'bug / test failure' });
+  });
+
+  it('stores invoke.optional in harness.json', () => {
+    const pkg = tmpPkg();
+    const repo = tmpGitRepo('skill.md', '# X\n');
+    runSkillsAdd({
+      url: `file://${repo}`,
+      skillName: 'myskill',
+      type: 'vendor',
+      packagePath: pkg,
+      invoke: { mode: 'optional' },
+    });
+    const harness = JSON.parse(fs.readFileSync(packageHarnessJson(pkg), 'utf8'));
+    expect(harness.skills?.myskill?.invoke).toEqual({ mode: 'optional' });
+  });
+
+  it('omits invoke field when not provided', () => {
+    const pkg = tmpPkg();
+    const repo = tmpGitRepo('skill.md', '# X\n');
+    runSkillsAdd({ url: `file://${repo}`, skillName: 'myskill', type: 'vendor', packagePath: pkg });
+    const harness = JSON.parse(fs.readFileSync(packageHarnessJson(pkg), 'utf8'));
+    expect(harness.skills?.myskill?.invoke).toBeUndefined();
+  });
 });
 
 describe('runSkillsAdd --reference', () => {

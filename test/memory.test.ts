@@ -49,6 +49,13 @@ describe('runMemoryAdd', () => {
     const { filePath } = runMemoryAdd({ root, name: 'test' });
     expect(filePath).toBe(projectMemoryFile(root, 'test'));
   });
+
+  it('throws on name with path separators', () => {
+    const root = tmpProject();
+    expect(() => runMemoryAdd({ root, name: '../danger' })).toThrow('Invalid memory name');
+    expect(() => runMemoryAdd({ root, name: 'foo/bar' })).toThrow('Invalid memory name');
+    expect(() => runMemoryAdd({ root, name: 'foo\\bar' })).toThrow('Invalid memory name');
+  });
 });
 
 describe('runMemoryList', () => {
@@ -83,7 +90,7 @@ describe('runMemoryList', () => {
     expect(entries).toHaveLength(0);
   });
 
-  it('sorts entries by title within each type', () => {
+  it('sorts entries alphabetically by title', () => {
     const root = tmpProject();
     fs.mkdirSync(projectMemoryDir(root), { recursive: true });
     fs.writeFileSync(projectMemoryFile(root, 'z'), '---\ntype: decision\n---\n\n# Zebra\n');
@@ -107,5 +114,12 @@ describe('runMemoryRemove', () => {
     const root = tmpProject();
     expect(() => runMemoryRemove({ root, name: 'nonexistent' }))
       .toThrow("Memory 'nonexistent' not found");
+  });
+
+  it('throws on name with path separators', () => {
+    const root = tmpProject();
+    expect(() => runMemoryRemove({ root, name: '../danger' })).toThrow('Invalid memory name');
+    expect(() => runMemoryRemove({ root, name: 'foo/bar' })).toThrow('Invalid memory name');
+    expect(() => runMemoryRemove({ root, name: 'foo\\bar' })).toThrow('Invalid memory name');
   });
 });

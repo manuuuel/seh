@@ -1,7 +1,8 @@
 // test/index-emitter.test.ts
 import { describe, it, expect } from 'vitest';
-import { buildIndex, buildDocument } from '../src/index-emitter.js';
+import { buildIndex, buildDocument, buildSkillsSection } from '../src/index-emitter.js';
 import { BANNER } from '../src/banner.js';
+import type { SkillEntry } from '../src/types.js';
 
 describe('buildIndex', () => {
   const out = buildIndex('# Title\nPreamble text.', [
@@ -45,5 +46,79 @@ describe('buildDocument', () => {
   });
   it('keeps section order', () => {
     expect(out.indexOf('# A')).toBeLessThan(out.indexOf('# B'));
+  });
+});
+
+describe('buildSkillsSection', () => {
+  it('returns empty string when no skills have invoke', () => {
+    const skills: Record<string, SkillEntry> = {
+      'xlsx': { type: 'vendor' },
+    };
+    expect(buildSkillsSection(skills)).toBe('');
+  });
+
+  it('returns empty string when skills record is empty', () => {
+    expect(buildSkillsSection({})).toBe('');
+  });
+
+  it('renders always section', () => {
+    const skills: Record<string, SkillEntry> = {
+      'caveman': { type: 'vendor', invoke: { mode: 'always', label: 'every response' } },
+    };
+    const out = buildSkillsSection(skills);
+    expect(out).toContain('## Skills');
+    expect(out).toContain('Always invoke:');
+    expect(out).toContain('`caveman` — every response');
+  });
+
+  it('renders always entry without label', () => {
+    const skills: Record<string, SkillEntry> = {
+      'caveman': { type: 'vendor', invoke: { mode: 'always' } },
+    };
+    const out = buildSkillsSection(skills);
+    expect(out).toContain('`caveman`');
+    expect(out).not.toContain('undefined');
+  });
+
+  it('renders when section', () => {
+    const skills: Record<string, SkillEntry> = {
+      'systematic-debugging': { type: 'vendor', invoke: { mode: 'when', condition: 'bug / test failure' } },
+    };
+    const out = buildSkillsSection(skills);
+    expect(out).toContain('Invoke when:');
+    expect(out).toContain('`systematic-debugging` — bug / test failure');
+  });
+
+  it('renders optional section', () => {
+    const skills: Record<string, SkillEntry> = {
+      'xlsx': { type: 'vendor', invoke: { mode: 'optional' } },
+    };
+    const out = buildSkillsSection(skills);
+    expect(out).toContain('Optional:');
+    expect(out).toContain('`xlsx`');
+  });
+
+  it('renders all three sections in order: always, when, optional', () => {
+    const skills: Record<string, SkillEntry> = {
+      'caveman': { type: 'vendor', invoke: { mode: 'always', label: 'every response' } },
+      'xlsx': { type: 'vendor', invoke: { mode: 'optional' } },
+      'systematic-debugging': { type: 'vendor', invoke: { mode: 'when', condition: 'bug / test failure' } },
+    };
+    const out = buildSkillsSection(skills);
+    const alwaysIdx = out.indexOf('Always invoke:');
+    const whenIdx = out.indexOf('Invoke when:');
+    const optIdx = out.indexOf('Optional:');
+    expect(alwaysIdx).toBeLessThan(whenIdx);
+    expect(whenIdx).toBeLessThan(optIdx);
+  });
+
+  it('skips skills with no invoke', () => {
+    const skills: Record<string, SkillEntry> = {
+      'xlsx': { type: 'vendor' },
+      'caveman': { type: 'vendor', invoke: { mode: 'always' } },
+    };
+    const out = buildSkillsSection(skills);
+    expect(out).toContain('`caveman`');
+    expect(out).not.toContain('`xlsx`');
   });
 });

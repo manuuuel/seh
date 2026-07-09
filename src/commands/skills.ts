@@ -125,7 +125,7 @@ export function runSkillsList(opts: {
   if (fs.existsSync(skillsDir)) {
     for (const entry of fs.readdirSync(skillsDir, { withFileTypes: true })) {
       if (entry.isDirectory() && !skills.find((s) => s.name === entry.name)) {
-        skills.push({ name: entry.name, type: 'vendor', onDisk: true, invoke: undefined });
+        skills.push({ name: entry.name, type: 'vendor', onDisk: true });
       }
     }
   }

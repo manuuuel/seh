@@ -6,7 +6,7 @@ import os from 'node:os';
 import { buildProgram } from '../src/cli.js';
 import { SUPPORTED_AGENTS } from '../src/links.js';
 import { packageHarnessJson } from '../src/paths.js';
-import { runPackageInit, runPackageUse, runPackageStatus } from '../src/commands/package.js';
+import { runPackageInit, runPackageUse } from '../src/commands/package.js';
 import * as packageModule from '../src/commands/package.js';
 import * as skillsModule from '../src/commands/skills.js';
 

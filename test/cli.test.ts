@@ -1,9 +1,8 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { execSync } from 'node:child_process';
 import { buildProgram } from '../src/cli.js';
 import { SUPPORTED_AGENTS } from '../src/links.js';
 import { packageHarnessJson } from '../src/paths.js';

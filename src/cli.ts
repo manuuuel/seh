@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import prompts from 'prompts';
+import type { SkillInvoke } from './types.js';
 import { runInitGlobal } from './commands/initGlobal.js';
 import { runInitProject } from './commands/initProject.js';
 import { runSync } from './commands/sync.js';
@@ -248,6 +249,13 @@ export function buildProgram(): Command {
     .action(async (url: string, opts: { vendor?: boolean; reference?: boolean; ref?: string; force?: boolean; always?: string | boolean; when?: string; optional?: boolean }) => {
       try {
         const { url: resolvedUrl, skillName } = parseSkillUrl(url);
+
+        const routingFlagCount = [opts.always !== undefined, !!opts.when, !!opts.optional].filter(Boolean).length;
+        if (routingFlagCount > 1) {
+          fail(new Error('--always, --when, and --optional are mutually exclusive'));
+          return;
+        }
+
         let type: 'vendor' | 'reference' | undefined;
         if (opts.vendor) type = 'vendor';
         else if (opts.reference) type = 'reference';
@@ -263,7 +271,7 @@ export function buildProgram(): Command {
           type = res.type as 'vendor' | 'reference';
         }
 
-        let invoke: import('./types.js').SkillInvoke | undefined;
+        let invoke: SkillInvoke | undefined;
         if (opts.always !== undefined) {
           invoke = { mode: 'always', label: typeof opts.always === 'string' ? opts.always : undefined };
         } else if (opts.when) {

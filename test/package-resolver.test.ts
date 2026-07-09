@@ -2,8 +2,11 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { execSync } from 'node:child_process';
 import { PackageResolver, readResolver } from '../src/package-resolver.js';
 import { packageTemplatesStackDir, packageGlobalAgentsMd, packageProjectsDir, globalConfigFile } from '../src/paths.js';
+import { runPackageInit } from '../src/commands/package.js';
+import { runSkillsAdd } from '../src/commands/skills.js';
 
 function tmpPkg(): string {
   const p = fs.mkdtempSync(path.join(os.tmpdir(), 'sehpkg-'));
@@ -11,6 +14,17 @@ function tmpPkg(): string {
   fs.mkdirSync(packageGlobalAgentsMd(p).replace('/AGENTS.md', ''), { recursive: true });
   fs.mkdirSync(packageProjectsDir(p), { recursive: true });
   return p;
+}
+
+function tmpGitRepo(fileName: string, content: string): string {
+  const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'sehpr-'));
+  execSync('git init -b main', { cwd: repo, stdio: 'pipe' });
+  execSync('git config user.email "t@t.com"', { cwd: repo, stdio: 'pipe' });
+  execSync('git config user.name "T"', { cwd: repo, stdio: 'pipe' });
+  fs.writeFileSync(path.join(repo, fileName), content);
+  execSync('git add .', { cwd: repo, stdio: 'pipe' });
+  execSync('git commit -m "init"', { cwd: repo, stdio: 'pipe' });
+  return repo;
 }
 
 describe('PackageResolver', () => {
@@ -91,6 +105,37 @@ describe('PackageResolver', () => {
     expect(files).toHaveLength(1);
     expect(files[0].relPath).toBe('project.md');
     expect(files[0].content).toBe('# NextJS Template\n');
+  });
+
+  it('skills() returns empty object when no active package', () => {
+    const r = new PackageResolver(null);
+    expect(r.skills()).toEqual({});
+  });
+
+  it('skills() returns empty object when harness.json has no skills', () => {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'sehbase-'));
+    const pkg = path.join(base, 'my-harness');
+    runPackageInit({ packagePath: pkg });
+    const r = new PackageResolver(pkg);
+    expect(r.skills()).toEqual({});
+  });
+
+  it('skills() returns skills map from harness.json', () => {
+    const base = fs.mkdtempSync(path.join(os.tmpdir(), 'sehbase-'));
+    const pkg = path.join(base, 'my-harness');
+    runPackageInit({ packagePath: pkg });
+    const repo = tmpGitRepo('s.md', '# S\n');
+    runSkillsAdd({
+      url: `file://${repo}`,
+      skillName: 'caveman',
+      type: 'vendor',
+      packagePath: pkg,
+      invoke: { mode: 'always', label: 'every response' },
+    });
+    const r = new PackageResolver(pkg);
+    const skills = r.skills();
+    expect(skills['caveman']?.type).toBe('vendor');
+    expect(skills['caveman']?.invoke).toEqual({ mode: 'always', label: 'every response' });
   });
 });
 

@@ -7,8 +7,10 @@ import {
   packageTemplatesStackDir,
   packageProjectsDir,
   packageTemplatesProjectDir,
+  packageHarnessJson,
 } from './paths.js';
 import { readGlobalConfig } from './links.js';
+import type { HarnessPackage, SkillEntry } from './types.js';
 
 export class PackageResolver {
   constructor(private readonly packagePath: string | null) {}
@@ -80,6 +82,14 @@ export class PackageResolver {
     };
     walk(templateDir);
     return result;
+  }
+
+  skills(): Record<string, SkillEntry> {
+    if (!this.packagePath) return {};
+    const p = packageHarnessJson(this.packagePath);
+    if (!fs.existsSync(p)) return {};
+    const harness: HarnessPackage = JSON.parse(fs.readFileSync(p, 'utf8'));
+    return harness.skills ?? {};
   }
 }
 

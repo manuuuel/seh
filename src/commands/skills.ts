@@ -62,17 +62,13 @@ export function runSkillsAdd(opts: {
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
-    const vendorEntry: SkillEntry = { type: 'vendor' };
-    if (opts.invoke) vendorEntry.invoke = opts.invoke;
-    harness.skills[opts.skillName] = vendorEntry;
+    harness.skills[opts.skillName] = opts.invoke
+      ? { type: 'vendor', invoke: opts.invoke }
+      : { type: 'vendor' };
   } else {
-    const refEntry: SkillEntry = {
-      type: 'reference',
-      source: opts.url,
-      ref: opts.ref ?? 'main',
-    };
-    if (opts.invoke) refEntry.invoke = opts.invoke;
-    harness.skills[opts.skillName] = refEntry;
+    harness.skills[opts.skillName] = opts.invoke
+      ? { type: 'reference', source: opts.url, ref: opts.ref ?? 'main', invoke: opts.invoke }
+      : { type: 'reference', source: opts.url, ref: opts.ref ?? 'main' };
     addToGitignore(opts.packagePath, `skills/${opts.skillName}/`);
   }
 

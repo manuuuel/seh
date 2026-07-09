@@ -156,6 +156,19 @@ describe('runSkillsAdd --reference', () => {
     const gi = fs.readFileSync(path.join(pkg, '.gitignore'), 'utf8');
     expect((gi.match(/skills\/y\//g) ?? []).length).toBe(1);
   });
+
+  it('stores invoke.when in harness.json for reference type', () => {
+    const pkg = tmpPkg();
+    runSkillsAdd({
+      url: 'https://github.com/x/ref',
+      skillName: 'ref-skill',
+      type: 'reference',
+      packagePath: pkg,
+      invoke: { mode: 'when', condition: 'bug / test failure' },
+    });
+    const harness = JSON.parse(fs.readFileSync(packageHarnessJson(pkg), 'utf8'));
+    expect(harness.skills?.['ref-skill']?.invoke).toEqual({ mode: 'when', condition: 'bug / test failure' });
+  });
 });
 
 describe('runSkillsUpdate', () => {

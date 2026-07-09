@@ -18,7 +18,7 @@ describe('cli (v2)', () => {
   });
   it('registers the v2 commands', () => {
     const names = buildProgram().commands.map((c) => c.name()).sort();
-    expect(names).toEqual(['check', 'init', 'link', 'package', 'skills', 'sync']);
+    expect(names).toEqual(['check', 'init', 'link', 'memory', 'package', 'skills', 'sync']);
   });
   it('exposes all supported agents', () => {
     expect([...SUPPORTED_AGENTS]).toContain('gemini');
@@ -43,6 +43,18 @@ describe('seh package commands (CLI)', () => {
     expect(subNames).toContain('init');
     expect(subNames).toContain('use');
     expect(subNames).toContain('status');
+  });
+});
+
+describe('seh memory commands (CLI)', () => {
+  it('seh memory command group registers add, list, remove subcommands', () => {
+    const program = buildProgram();
+    const memoryCmd = program.commands.find((c) => c.name() === 'memory');
+    expect(memoryCmd).toBeDefined();
+    const sub = memoryCmd!.commands.map((c) => c.name());
+    expect(sub).toContain('add');
+    expect(sub).toContain('list');
+    expect(sub).toContain('remove');
   });
 });
 

@@ -4,7 +4,8 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import prompts from 'prompts';
-import type { SkillInvoke } from './types.js';
+import { spawnSync } from 'node:child_process';
+import type { SkillInvoke, MemoryType } from './types.js';
 import { runInitGlobal } from './commands/initGlobal.js';
 import { runInitProject } from './commands/initProject.js';
 import { runSync } from './commands/sync.js';
@@ -13,6 +14,7 @@ import { runLink } from './commands/link.js';
 import { runPackageInit, runPackageUse, runPackageStatus } from './commands/package.js';
 import { runSkillsAdd, runSkillsUpdate, runSkillsList } from './commands/skills.js';
 import { runPackageInstall } from './commands/install.js';
+import { runMemoryAdd, runMemoryList, runMemoryRemove } from './commands/memory.js';
 import { detectTechnologies } from './detect.js';
 import { SUPPORTED_TECHS } from './catalog.js';
 import { SUPPORTED_AGENTS, SKILL_TARGETS, linkAgent, readConfiguredAgents, readGlobalConfig } from './links.js';
@@ -319,6 +321,66 @@ export function buildProgram(): Command {
           }
           console.log(`  ${disk} ${s.name}  [${s.type}]${invokeStr}${src}`);
         }
+      } catch (err) { fail(err); }
+    });
+
+  const memoryGroup = program.command('memory').description('Manage project memory files in .seh/memory/');
+
+  memoryGroup
+    .command('add <name>')
+    .description('Create a memory file (default type: decision)')
+    .option('--decision', 'record a decision made and why')
+    .option('--constraint', 'record a hard rule discovered')
+    .option('--learning', 'record something non-obvious that cost time')
+    .option('--problem', 'record an unresolved issue for next session')
+    .action((name: string, opts: { decision?: boolean; constraint?: boolean; learning?: boolean; problem?: boolean }) => {
+      try {
+        let type: MemoryType = 'decision';
+        if (opts.constraint) type = 'constraint';
+        else if (opts.learning) type = 'learning';
+        else if (opts.problem) type = 'problem';
+        const { filePath, created } = runMemoryAdd({ root: process.cwd(), name, type });
+        if (!created) {
+          console.log(`seh: memory '${name}' already exists at ${filePath}`);
+        } else {
+          const editor = process.env['EDITOR'];
+          if (editor) {
+            spawnSync(editor, [filePath], { stdio: 'inherit' });
+          } else {
+            console.log(`seh: created ${filePath}`);
+          }
+        }
+      } catch (err) { fail(err); }
+    });
+
+  memoryGroup
+    .command('list')
+    .description('List memory files grouped by type')
+    .action(() => {
+      try {
+        const { entries } = runMemoryList({ root: process.cwd() });
+        if (entries.length === 0) { console.log('seh: no memory files'); return; }
+        const byType = (type: string) => entries.filter((e) => e.type === type);
+        const print = (label: string, type: string) => {
+          const es = byType(type);
+          if (es.length === 0) return;
+          console.log(`\n${label}`);
+          for (const e of es) console.log(`  ${e.name}  ${e.title}`);
+        };
+        print('Decisions', 'decision');
+        print('Constraints', 'constraint');
+        print('Learnings', 'learning');
+        print('Open problems', 'problem');
+      } catch (err) { fail(err); }
+    });
+
+  memoryGroup
+    .command('remove <name>')
+    .description('Delete a memory file')
+    .action((name: string) => {
+      try {
+        runMemoryRemove({ root: process.cwd(), name });
+        console.log(`seh: removed memory '${name}'`);
       } catch (err) { fail(err); }
     });
 

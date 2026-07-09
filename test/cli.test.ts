@@ -1,11 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { execSync } from 'node:child_process';
 import { buildProgram } from '../src/cli.js';
 import { SUPPORTED_AGENTS } from '../src/links.js';
 import { packageHarnessJson } from '../src/paths.js';
+import { runPackageInit, runPackageUse } from '../src/commands/package.js';
+import * as skillsModule from '../src/commands/skills.js';
 
 describe('cli (v2)', () => {
   it('is named seh with a version', () => {
@@ -60,5 +63,109 @@ describe('seh skills commands (CLI)', () => {
     expect(pkgCmd).toBeDefined();
     const subNames = pkgCmd!.commands.map((c) => c.name());
     expect(subNames).toContain('install');
+  });
+
+  it('seh skills add with --always flag passes invoke.always to runSkillsAdd', async () => {
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'sehcli-home-'));
+    try {
+      const pkg = path.join(home, 'test-harness');
+      runPackageInit({ packagePath: pkg, home });
+      runPackageUse({ packagePath: pkg, home });
+
+      const mockRunSkillsAdd = vi.spyOn(skillsModule, 'runSkillsAdd').mockImplementation(() => {});
+
+      await buildProgram().parseAsync([
+        'node', 'seh', 'skills', 'add', 'github:owner/repo-name', '--vendor', '--always', 'test label'
+      ]);
+
+      expect(mockRunSkillsAdd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          invoke: { mode: 'always', label: 'test label' },
+          skillName: 'repo-name',
+        })
+      );
+
+      mockRunSkillsAdd.mockRestore();
+    } finally {
+      fs.rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  it('seh skills add with --always flag (no label) passes invoke with undefined label', async () => {
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'sehcli-home-'));
+    try {
+      const pkg = path.join(home, 'test-harness');
+      runPackageInit({ packagePath: pkg, home });
+      runPackageUse({ packagePath: pkg, home });
+
+      const mockRunSkillsAdd = vi.spyOn(skillsModule, 'runSkillsAdd').mockImplementation(() => {});
+
+      await buildProgram().parseAsync([
+        'node', 'seh', 'skills', 'add', 'github:owner/test-skill', '--vendor', '--always'
+      ]);
+
+      expect(mockRunSkillsAdd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          invoke: { mode: 'always', label: undefined },
+          skillName: 'test-skill',
+        })
+      );
+
+      mockRunSkillsAdd.mockRestore();
+    } finally {
+      fs.rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  it('seh skills add with --when flag passes invoke.when to runSkillsAdd', async () => {
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'sehcli-home-'));
+    try {
+      const pkg = path.join(home, 'test-harness');
+      runPackageInit({ packagePath: pkg, home });
+      runPackageUse({ packagePath: pkg, home });
+
+      const mockRunSkillsAdd = vi.spyOn(skillsModule, 'runSkillsAdd').mockImplementation(() => {});
+
+      await buildProgram().parseAsync([
+        'node', 'seh', 'skills', 'add', 'github:owner/debug-skill', '--vendor', '--when', 'bug / test failure'
+      ]);
+
+      expect(mockRunSkillsAdd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          invoke: { mode: 'when', condition: 'bug / test failure' },
+          skillName: 'debug-skill',
+        })
+      );
+
+      mockRunSkillsAdd.mockRestore();
+    } finally {
+      fs.rmSync(home, { recursive: true, force: true });
+    }
+  });
+
+  it('seh skills add with --optional flag passes invoke.optional to runSkillsAdd', async () => {
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'sehcli-home-'));
+    try {
+      const pkg = path.join(home, 'test-harness');
+      runPackageInit({ packagePath: pkg, home });
+      runPackageUse({ packagePath: pkg, home });
+
+      const mockRunSkillsAdd = vi.spyOn(skillsModule, 'runSkillsAdd').mockImplementation(() => {});
+
+      await buildProgram().parseAsync([
+        'node', 'seh', 'skills', 'add', 'github:owner/opt-skill', '--vendor', '--optional'
+      ]);
+
+      expect(mockRunSkillsAdd).toHaveBeenCalledWith(
+        expect.objectContaining({
+          invoke: { mode: 'optional' },
+          skillName: 'opt-skill',
+        })
+      );
+
+      mockRunSkillsAdd.mockRestore();
+    } finally {
+      fs.rmSync(home, { recursive: true, force: true });
+    }
   });
 });

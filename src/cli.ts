@@ -242,7 +242,10 @@ export function buildProgram(): Command {
     .option('--reference', 'track skill as external reference (fetched on install)')
     .option('--ref <branch>', 'branch or tag (default: main)')
     .option('-f, --force', 'overwrite existing skill')
-    .action(async (url: string, opts: { vendor?: boolean; reference?: boolean; ref?: string; force?: boolean }) => {
+    .option('--always [label]', 'invoke this skill every response')
+    .option('--when <condition>', 'invoke this skill when condition matches')
+    .option('--optional', 'skill available, agent decides when to use it')
+    .action(async (url: string, opts: { vendor?: boolean; reference?: boolean; ref?: string; force?: boolean; always?: string | boolean; when?: string; optional?: boolean }) => {
       try {
         const { url: resolvedUrl, skillName } = parseSkillUrl(url);
         let type: 'vendor' | 'reference' | undefined;
@@ -259,9 +262,19 @@ export function buildProgram(): Command {
           if (res.type === undefined) { console.log('seh: cancelled.'); process.exitCode = 0; return; }
           type = res.type as 'vendor' | 'reference';
         }
+
+        let invoke: import('./types.js').SkillInvoke | undefined;
+        if (opts.always !== undefined) {
+          invoke = { mode: 'always', label: typeof opts.always === 'string' ? opts.always : undefined };
+        } else if (opts.when) {
+          invoke = { mode: 'when', condition: opts.when };
+        } else if (opts.optional) {
+          invoke = { mode: 'optional' };
+        }
+
         const status = runPackageStatus({ home: os.homedir() });
         if (!status.packagePath) throw new Error('No active package. Run `seh package use <path>` first.');
-        runSkillsAdd({ url: resolvedUrl, skillName, type, ref: opts.ref, packagePath: status.packagePath, force: opts.force });
+        runSkillsAdd({ url: resolvedUrl, skillName, type, ref: opts.ref, packagePath: status.packagePath, force: opts.force, invoke });
         console.log(`seh: skill '${skillName}' added (${type})`);
       } catch (err) { fail(err); }
     });

@@ -1,5 +1,5 @@
 import { BANNER } from './banner.js';
-import type { SkillEntry } from './types.js';
+import type { SkillEntry, MemoryEntry } from './types.js';
 
 export type IndexEntry = { title: string; relPath: string; cue?: string };
 
@@ -43,6 +43,35 @@ export function buildSkillsSection(skills: Record<string, SkillEntry>): string {
   if (always.length > 0) parts.push(`Always invoke:\n${always.join('\n')}`);
   if (when.length > 0) parts.push(`Invoke when:\n${when.join('\n')}`);
   if (optional.length > 0) parts.push(`Optional:\n${optional.join('\n')}`);
+
+  return parts.join('\n\n');
+}
+
+const MEMORY_PROTOCOL = `Write to \`.seh/memory/\` at end of every session:
+- **decision** — a choice made and why (architecture, tech, approach)
+- **constraint** — a hard rule discovered (never do X, always do Y)
+- **learning** — something non-obvious that cost time to figure out
+- **problem** — unresolved issue to pick up next session
+
+Run: \`seh memory add <name> [--decision|--constraint|--learning|--problem]\``;
+
+export function buildMemorySection(entries: MemoryEntry[]): string {
+  const byType = (type: MemoryEntry['type']) =>
+    entries
+      .filter((e) => e.type === type)
+      .sort((a, b) => a.title.localeCompare(b.title))
+      .map((e) => `- [${e.title}](${e.relPath})`);
+
+  const decisions = byType('decision');
+  const constraints = byType('constraint');
+  const learnings = byType('learning');
+  const problems = byType('problem');
+
+  const parts: string[] = ['## Memory', MEMORY_PROTOCOL];
+  if (decisions.length > 0) parts.push(`### Decisions\n${decisions.join('\n')}`);
+  if (constraints.length > 0) parts.push(`### Constraints\n${constraints.join('\n')}`);
+  if (learnings.length > 0) parts.push(`### Learnings\n${learnings.join('\n')}`);
+  if (problems.length > 0) parts.push(`### Open problems\n${problems.join('\n')}`);
 
   return parts.join('\n\n');
 }

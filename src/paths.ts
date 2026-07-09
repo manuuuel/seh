@@ -47,3 +47,6 @@ export const sehSkillsDir = (h: string = home()) => path.join(h, '.seh', 'skills
 export const sehSkillDir = (h: string = home(), name: string) => path.join(h, '.seh', 'skills', name);
 export const packageSkillsDir = (p: string) => path.join(p, 'skills');
 export const packageSkillDir = (p: string, name: string) => path.join(p, 'skills', name);
+
+export const projectMemoryDir = (root: string) => path.join(projectSehDir(root), 'memory');
+export const projectMemoryFile = (root: string, name: string) => path.join(projectMemoryDir(root), `${name}.md`);

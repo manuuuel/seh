@@ -311,7 +311,13 @@ export function buildProgram(): Command {
         for (const s of list) {
           const src = s.source ? `  ${s.source} (${s.ref})` : '';
           const disk = s.onDisk ? '✓' : '✗';
-          console.log(`  ${disk} ${s.name}  [${s.type}]${src}`);
+          let invokeStr = '';
+          if (s.invoke) {
+            if (s.invoke.mode === 'always') invokeStr = `  always${s.invoke.label ? `: ${s.invoke.label}` : ''}`;
+            else if (s.invoke.mode === 'when') invokeStr = `  when: ${s.invoke.condition}`;
+            else if (s.invoke.mode === 'optional') invokeStr = `  optional`;
+          }
+          console.log(`  ${disk} ${s.name}  [${s.type}]${invokeStr}${src}`);
         }
       } catch (err) { fail(err); }
     });

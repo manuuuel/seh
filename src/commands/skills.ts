@@ -110,7 +110,7 @@ export function runSkillsUpdate(opts: {
 
 export function runSkillsList(opts: {
   packagePath: string;
-}): { skills: Array<{ name: string; type: string; source?: string; ref?: string; onDisk: boolean }> } {
+}): { skills: Array<{ name: string; type: string; source?: string; ref?: string; onDisk: boolean; invoke?: SkillInvoke }> } {
   const harness = readHarness(opts.packagePath);
   const skills = Object.entries(harness.skills ?? {}).map(([name, entry]) => ({
     name,
@@ -118,13 +118,14 @@ export function runSkillsList(opts: {
     source: entry.type === 'reference' ? entry.source : undefined,
     ref: entry.type === 'reference' ? entry.ref : undefined,
     onDisk: fs.existsSync(packageSkillDir(opts.packagePath, name)),
+    invoke: entry.invoke,
   }));
 
   const skillsDir = packageSkillsDir(opts.packagePath);
   if (fs.existsSync(skillsDir)) {
     for (const entry of fs.readdirSync(skillsDir, { withFileTypes: true })) {
       if (entry.isDirectory() && !skills.find((s) => s.name === entry.name)) {
-        skills.push({ name: entry.name, type: 'vendor', onDisk: true });
+        skills.push({ name: entry.name, type: 'vendor', onDisk: true, invoke: undefined });
       }
     }
   }

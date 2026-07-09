@@ -214,4 +214,26 @@ describe('runSkillsList', () => {
     expect(skills.find(s => s.name === 'vendor-skill')?.onDisk).toBe(true);
     expect(skills.find(s => s.name === 'ref-skill')?.onDisk).toBe(false);
   });
+
+  it('exposes invoke field in list output', () => {
+    const pkg = tmpPkg();
+    const repo = tmpGitRepo('v.md', '# V\n');
+    runSkillsAdd({
+      url: `file://${repo}`,
+      skillName: 'vendor-skill',
+      type: 'vendor',
+      packagePath: pkg,
+      invoke: { mode: 'always', label: 'every response' },
+    });
+    runSkillsAdd({
+      url: 'https://github.com/x/ref',
+      skillName: 'ref-skill',
+      type: 'reference',
+      packagePath: pkg,
+      invoke: { mode: 'when', condition: 'bug / test failure' },
+    });
+    const { skills } = runSkillsList({ packagePath: pkg });
+    expect(skills.find(s => s.name === 'vendor-skill')?.invoke).toEqual({ mode: 'always', label: 'every response' });
+    expect(skills.find(s => s.name === 'ref-skill')?.invoke).toEqual({ mode: 'when', condition: 'bug / test failure' });
+  });
 });

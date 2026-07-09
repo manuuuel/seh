@@ -25,3 +25,12 @@ export type HarnessPackage = {
   modelTag?: string;
   skills?: Record<string, SkillEntry>;
 };
+
+export type MemoryType = 'decision' | 'constraint' | 'learning' | 'problem';
+
+export type MemoryEntry = {
+  name: string;
+  type: MemoryType;
+  title: string;
+  relPath: string;
+};

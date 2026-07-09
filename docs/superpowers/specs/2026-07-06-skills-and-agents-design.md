@@ -94,16 +94,19 @@ If an agent does not have a skill directory concept, seh skips it silently with 
 
 ## Agent Skill Targets
 
-| Agent | Skills directory | Supported today |
-|-------|-----------------|-----------------|
-| `claude` | `~/.claude/skills/<name>/` | Yes |
-| `codex` | TBD | No — skip |
-| `pi` | TBD | No — skip |
-| `gemini` | TBD | No — skip |
-| `opencode` | TBD | No — skip |
-| `copilot` | TBD | No — skip |
+All supported agents have confirmed user-level skill directories (verified against official docs and source repos, 2026-07):
 
-When other agents add skill directory support, add their target path to this table and to the `SKILL_TARGETS` map in `src/links.ts`.
+| Agent | Skills directory | Source verified |
+|-------|-----------------|-----------------|
+| `claude` | `~/.claude/skills/<name>/` | Claude Code source |
+| `codex` | `~/.codex/skills/<name>/` | openai/codex source (`CODEX_HOME/skills/`) |
+| `gemini` | `~/.gemini/skills/<name>/` | google-gemini/gemini-cli docs |
+| `opencode` | `~/.config/opencode/skills/<name>/` | sst/opencode source (XDG config dir + `skills/`) |
+| `pi` | `~/.pi/agent/skills/<name>/` | earendil-works/pi docs |
+| `copilot` | `~/.copilot/skills/<name>/` | GitHub Copilot docs |
+| `agents` | `~/.agents/skills/<name>/` | cross-agent interoperability alias (Gemini CLI, Pi) |
+
+`SKILL_TARGETS` in `src/links.ts` maps all seven agent keys to their respective path functions.
 
 ---
 

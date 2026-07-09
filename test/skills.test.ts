@@ -68,6 +68,56 @@ describe('runSkillsAdd --vendor', () => {
     expect(() => runSkillsAdd({ url: `file://${repo}`, skillName: 'dup', type: 'vendor', packagePath: pkg, force: true }))
       .not.toThrow();
   });
+
+  it('stores invoke.always in harness.json', () => {
+    const pkg = tmpPkg();
+    const repo = tmpGitRepo('skill.md', '# X\n');
+    runSkillsAdd({
+      url: `file://${repo}`,
+      skillName: 'myskill',
+      type: 'vendor',
+      packagePath: pkg,
+      invoke: { mode: 'always', label: 'every response' },
+    });
+    const harness = JSON.parse(fs.readFileSync(packageHarnessJson(pkg), 'utf8'));
+    expect(harness.skills?.myskill?.invoke).toEqual({ mode: 'always', label: 'every response' });
+  });
+
+  it('stores invoke.when in harness.json', () => {
+    const pkg = tmpPkg();
+    const repo = tmpGitRepo('skill.md', '# X\n');
+    runSkillsAdd({
+      url: `file://${repo}`,
+      skillName: 'myskill',
+      type: 'vendor',
+      packagePath: pkg,
+      invoke: { mode: 'when', condition: 'bug / test failure' },
+    });
+    const harness = JSON.parse(fs.readFileSync(packageHarnessJson(pkg), 'utf8'));
+    expect(harness.skills?.myskill?.invoke).toEqual({ mode: 'when', condition: 'bug / test failure' });
+  });
+
+  it('stores invoke.optional in harness.json', () => {
+    const pkg = tmpPkg();
+    const repo = tmpGitRepo('skill.md', '# X\n');
+    runSkillsAdd({
+      url: `file://${repo}`,
+      skillName: 'myskill',
+      type: 'vendor',
+      packagePath: pkg,
+      invoke: { mode: 'optional' },
+    });
+    const harness = JSON.parse(fs.readFileSync(packageHarnessJson(pkg), 'utf8'));
+    expect(harness.skills?.myskill?.invoke).toEqual({ mode: 'optional' });
+  });
+
+  it('omits invoke field when not provided', () => {
+    const pkg = tmpPkg();
+    const repo = tmpGitRepo('skill.md', '# X\n');
+    runSkillsAdd({ url: `file://${repo}`, skillName: 'myskill', type: 'vendor', packagePath: pkg });
+    const harness = JSON.parse(fs.readFileSync(packageHarnessJson(pkg), 'utf8'));
+    expect(harness.skills?.myskill?.invoke).toBeUndefined();
+  });
 });
 
 describe('runSkillsAdd --reference', () => {
@@ -105,6 +155,19 @@ describe('runSkillsAdd --reference', () => {
     runSkillsAdd({ url: 'https://github.com/x/y', skillName: 'y', type: 'reference', packagePath: pkg, force: true });
     const gi = fs.readFileSync(path.join(pkg, '.gitignore'), 'utf8');
     expect((gi.match(/skills\/y\//g) ?? []).length).toBe(1);
+  });
+
+  it('stores invoke.when in harness.json for reference type', () => {
+    const pkg = tmpPkg();
+    runSkillsAdd({
+      url: 'https://github.com/x/ref',
+      skillName: 'ref-skill',
+      type: 'reference',
+      packagePath: pkg,
+      invoke: { mode: 'when', condition: 'bug / test failure' },
+    });
+    const harness = JSON.parse(fs.readFileSync(packageHarnessJson(pkg), 'utf8'));
+    expect(harness.skills?.['ref-skill']?.invoke).toEqual({ mode: 'when', condition: 'bug / test failure' });
   });
 });
 
@@ -150,5 +213,27 @@ describe('runSkillsList', () => {
     expect(skills.find(s => s.name === 'ref-skill')?.source).toBe('https://github.com/x/ref');
     expect(skills.find(s => s.name === 'vendor-skill')?.onDisk).toBe(true);
     expect(skills.find(s => s.name === 'ref-skill')?.onDisk).toBe(false);
+  });
+
+  it('exposes invoke field in list output', () => {
+    const pkg = tmpPkg();
+    const repo = tmpGitRepo('v.md', '# V\n');
+    runSkillsAdd({
+      url: `file://${repo}`,
+      skillName: 'vendor-skill',
+      type: 'vendor',
+      packagePath: pkg,
+      invoke: { mode: 'always', label: 'every response' },
+    });
+    runSkillsAdd({
+      url: 'https://github.com/x/ref',
+      skillName: 'ref-skill',
+      type: 'reference',
+      packagePath: pkg,
+      invoke: { mode: 'when', condition: 'bug / test failure' },
+    });
+    const { skills } = runSkillsList({ packagePath: pkg });
+    expect(skills.find(s => s.name === 'vendor-skill')?.invoke).toEqual({ mode: 'always', label: 'every response' });
+    expect(skills.find(s => s.name === 'ref-skill')?.invoke).toEqual({ mode: 'when', condition: 'bug / test failure' });
   });
 });

@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import prompts from 'prompts';
+import type { SkillInvoke } from './types.js';
 import { runInitGlobal } from './commands/initGlobal.js';
 import { runInitProject } from './commands/initProject.js';
 import { runSync } from './commands/sync.js';
@@ -242,9 +243,19 @@ export function buildProgram(): Command {
     .option('--reference', 'track skill as external reference (fetched on install)')
     .option('--ref <branch>', 'branch or tag (default: main)')
     .option('-f, --force', 'overwrite existing skill')
-    .action(async (url: string, opts: { vendor?: boolean; reference?: boolean; ref?: string; force?: boolean }) => {
+    .option('--always [label]', 'invoke this skill every response')
+    .option('--when <condition>', 'invoke this skill when condition matches')
+    .option('--optional', 'skill available, agent decides when to use it')
+    .action(async (url: string, opts: { vendor?: boolean; reference?: boolean; ref?: string; force?: boolean; always?: string | boolean; when?: string; optional?: boolean }) => {
       try {
         const { url: resolvedUrl, skillName } = parseSkillUrl(url);
+
+        const routingFlagCount = [opts.always !== undefined, !!opts.when, !!opts.optional].filter(Boolean).length;
+        if (routingFlagCount > 1) {
+          fail(new Error('--always, --when, and --optional are mutually exclusive'));
+          return;
+        }
+
         let type: 'vendor' | 'reference' | undefined;
         if (opts.vendor) type = 'vendor';
         else if (opts.reference) type = 'reference';
@@ -259,9 +270,19 @@ export function buildProgram(): Command {
           if (res.type === undefined) { console.log('seh: cancelled.'); process.exitCode = 0; return; }
           type = res.type as 'vendor' | 'reference';
         }
+
+        let invoke: SkillInvoke | undefined;
+        if (opts.always !== undefined) {
+          invoke = { mode: 'always', label: typeof opts.always === 'string' ? opts.always : undefined };
+        } else if (opts.when) {
+          invoke = { mode: 'when', condition: opts.when };
+        } else if (opts.optional) {
+          invoke = { mode: 'optional' };
+        }
+
         const status = runPackageStatus({ home: os.homedir() });
         if (!status.packagePath) throw new Error('No active package. Run `seh package use <path>` first.');
-        runSkillsAdd({ url: resolvedUrl, skillName, type, ref: opts.ref, packagePath: status.packagePath, force: opts.force });
+        runSkillsAdd({ url: resolvedUrl, skillName, type, ref: opts.ref, packagePath: status.packagePath, force: opts.force, invoke });
         console.log(`seh: skill '${skillName}' added (${type})`);
       } catch (err) { fail(err); }
     });
@@ -290,7 +311,13 @@ export function buildProgram(): Command {
         for (const s of list) {
           const src = s.source ? `  ${s.source} (${s.ref})` : '';
           const disk = s.onDisk ? '✓' : '✗';
-          console.log(`  ${disk} ${s.name}  [${s.type}]${src}`);
+          let invokeStr = '';
+          if (s.invoke) {
+            if (s.invoke.mode === 'always') invokeStr = `  always${s.invoke.label ? `: ${s.invoke.label}` : ''}`;
+            else if (s.invoke.mode === 'when') invokeStr = `  when: ${s.invoke.condition}`;
+            else if (s.invoke.mode === 'optional') invokeStr = `  optional`;
+          }
+          console.log(`  ${disk} ${s.name}  [${s.type}]${invokeStr}${src}`);
         }
       } catch (err) { fail(err); }
     });

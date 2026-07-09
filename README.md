@@ -1,13 +1,58 @@
 # se-harness
 
+[![CI](https://github.com/manuuuel/seh/actions/workflows/ci.yml/badge.svg)](https://github.com/manuuuel/seh/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Node.js >=18](https://img.shields.io/badge/node-%3E%3D18-brightgreen.svg)](package.json)
+
 Portable, tool-agnostic AI coding harness generator. One source of truth,
 `AGENTS.md` as the entrypoint, no vendor lock-in.
 
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Why seh](#why-seh)
+- [Layers](#layers)
+- [The two shapes of `AGENTS.md`](#the-two-shapes-of-agentsmd)
+- [Commands](#commands)
+- [Harness Packages](#harness-packages)
+- [Skills](#skills)
+- [Memory](#memory)
+- [Agent skill directories](#agent-skill-directories)
+- [Installation](#installation)
+- [Try it (sandboxed demo)](#try-it-sandboxed-demo)
+- [Development](#development)
+- [Contributing](#contributing)
+
+## Quick Start
+
+```bash
+npm install -g se-harness
+
+# Once per machine: unified global ruleset + agent symlinks
+seh init --global --agents claude,codex --yes
+
+# Per project: detect stack, scaffold AGENTS.md + .seh/
+cd your-project
+seh init --tech typescript --yes
+
+# Regenerate generated files after editing .seh/ sources
+seh sync
+```
+
+This gives you a `~/.seh/AGENTS.md` global ruleset symlinked into your
+agents' config paths, plus a project `AGENTS.md` (and `CLAUDE.md`,
+`GEMINI.md`, …) that every supported agent reads automatically.
+
+## Why seh
+
 `seh` produces the context files that AI coding agents (Claude Code, Codex,
 Gemini, Pi, OpenCode, Copilot, …) read: a **single global ruleset** on your
-machine plus a **per-project index** of focused, technology-specific guideline
-modules. Skills from a harness package are distributed to every agent that
-supports them.
+machine plus a **per-project index** of focused, technology-specific
+guideline modules. Skills from a harness package are distributed to every
+agent that supports them. Edit one source of truth, run `seh sync`, and
+every tool-specific file regenerates in lockstep — no more copy-pasting the
+same rules into `CLAUDE.md`, `GEMINI.md`, and `.github/copilot-instructions.md`
+separately.
 
 ## Layers
 
@@ -506,6 +551,6 @@ npm test         # run the test suite (155 tests)
 npm run dev      # run the CLI via tsx without building
 ```
 
-## License
+## Contributing
 
-MIT
+See [CONTRIBUTING.md](CONTRIBUTING.md) for how to propose changes.

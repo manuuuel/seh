@@ -3,10 +3,11 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { runSync } from '../src/commands/sync.js';
-import { projectCanonicalIndex, projectIndexFile, projectGeminiFile, projectSehDir } from '../src/paths.js';
+import { projectCanonicalIndex, projectIndexFile, projectGeminiFile, projectSehDir, projectMemoryDir } from '../src/paths.js';
 import { PackageResolver } from '../src/package-resolver.js';
 import { packageTemplatesStackDir, packageProjectsDir } from '../src/paths.js';
 import { runPackageInit } from '../src/commands/package.js';
+import { runMemoryAdd } from '../src/commands/memory.js';
 
 function repoWithProject() {
   const r = fs.mkdtempSync(path.join(os.tmpdir(), 'sehsync-'));
@@ -135,5 +136,39 @@ describe('runSync with resolver', () => {
     runSync({ root: r, technologies: ['typescript'], projectAgents: [] });
     const idx = fs.readFileSync(projectCanonicalIndex(r), 'utf8');
     expect(idx).not.toContain('## Skills');
+  });
+});
+
+describe('runSync memory section', () => {
+  it('appends ## Memory section when .seh/memory/ has entries', () => {
+    const r = repoWithProject();
+    fs.mkdirSync(path.join(r, '.seh', 'memory'), { recursive: true });
+    fs.writeFileSync(
+      path.join(r, '.seh', 'memory', 'auth.md'),
+      '---\ntype: decision\n---\n\n# Auth strategy\n\nChose JWT.\n',
+    );
+    runSync({ root: r, technologies: ['typescript'], projectAgents: [] });
+    const idx = fs.readFileSync(projectCanonicalIndex(r), 'utf8');
+    expect(idx).toContain('## Memory');
+    expect(idx).toContain('seh memory add');
+    expect(idx).toContain('### Decisions');
+    expect(idx).toContain('[Auth strategy](.seh/memory/auth.md)');
+  });
+
+  it('renders only protocol block when memory dir exists but is empty', () => {
+    const r = repoWithProject();
+    fs.mkdirSync(path.join(r, '.seh', 'memory'), { recursive: true });
+    runSync({ root: r, technologies: ['typescript'], projectAgents: [] });
+    const idx = fs.readFileSync(projectCanonicalIndex(r), 'utf8');
+    expect(idx).toContain('## Memory');
+    expect(idx).toContain('seh memory add');
+    expect(idx).not.toContain('### Decisions');
+  });
+
+  it('omits ## Memory section when memory dir does not exist', () => {
+    const r = repoWithProject();
+    runSync({ root: r, technologies: ['typescript'], projectAgents: [] });
+    const idx = fs.readFileSync(projectCanonicalIndex(r), 'utf8');
+    expect(idx).not.toContain('## Memory');
   });
 });

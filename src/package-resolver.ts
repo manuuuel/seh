@@ -88,6 +88,7 @@ export class PackageResolver {
     if (!this.packagePath) return {};
     const p = packageHarnessJson(this.packagePath);
     if (!fs.existsSync(p)) return {};
+    // Parse errors propagate intentionally — callers are wrapped in CLI try/catch (fail())
     const harness: HarnessPackage = JSON.parse(fs.readFileSync(p, 'utf8'));
     return harness.skills ?? {};
   }

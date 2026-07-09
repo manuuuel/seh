@@ -329,12 +329,16 @@ export function buildProgram(): Command {
   memoryGroup
     .command('add <name>')
     .description('Create a memory file (default type: decision)')
-    .option('--decision', 'record a decision made and why')
     .option('--constraint', 'record a hard rule discovered')
     .option('--learning', 'record something non-obvious that cost time')
     .option('--problem', 'record an unresolved issue for next session')
-    .action((name: string, opts: { decision?: boolean; constraint?: boolean; learning?: boolean; problem?: boolean }) => {
+    .action((name: string, opts: { constraint?: boolean; learning?: boolean; problem?: boolean }) => {
       try {
+        const typeFlagCount = [opts.constraint, opts.learning, opts.problem].filter(Boolean).length;
+        if (typeFlagCount > 1) {
+          fail(new Error('--constraint, --learning, and --problem are mutually exclusive'));
+          return;
+        }
         let type: MemoryType = 'decision';
         if (opts.constraint) type = 'constraint';
         else if (opts.learning) type = 'learning';
@@ -345,7 +349,8 @@ export function buildProgram(): Command {
         } else {
           const editor = process.env['EDITOR'];
           if (editor) {
-            spawnSync(editor, [filePath], { stdio: 'inherit' });
+            const [bin, ...editorArgs] = editor.split(/\s+/);
+            spawnSync(bin!, [...editorArgs, filePath], { stdio: 'inherit' });
           } else {
             console.log(`seh: created ${filePath}`);
           }

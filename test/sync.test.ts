@@ -3,11 +3,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { runSync } from '../src/commands/sync.js';
-import { projectCanonicalIndex, projectIndexFile, projectGeminiFile, projectSehDir, projectMemoryDir } from '../src/paths.js';
+import { projectCanonicalIndex, projectIndexFile, projectGeminiFile, projectSehDir } from '../src/paths.js';
 import { PackageResolver } from '../src/package-resolver.js';
 import { packageTemplatesStackDir, packageProjectsDir } from '../src/paths.js';
 import { runPackageInit } from '../src/commands/package.js';
-import { runMemoryAdd } from '../src/commands/memory.js';
 
 function repoWithProject() {
   const r = fs.mkdtempSync(path.join(os.tmpdir(), 'sehsync-'));

@@ -31,4 +31,10 @@ describe('paths (v2)', () => {
     expect(p.projectGeminiFile('/r')).toBe('/r/GEMINI.md');
     expect(p.projectCopilotFile('/r')).toBe('/r/.github/copilot-instructions.md');
   });
+  it('projectMemoryDir returns .seh/memory under root', () => {
+    expect(p.projectMemoryDir('/my/project')).toBe('/my/project/.seh/memory');
+  });
+  it('projectMemoryFile returns .seh/memory/<name>.md under root', () => {
+    expect(p.projectMemoryFile('/my/project', 'auth-strategy')).toBe('/my/project/.seh/memory/auth-strategy.md');
+  });
 });

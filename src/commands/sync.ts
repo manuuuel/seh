@@ -1,11 +1,12 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { projectSehDir, projectStackDir, projectCanonicalIndex, lockFile } from '../paths.js';
+import { projectSehDir, projectStackDir, projectCanonicalIndex, lockFile, projectMemoryDir } from '../paths.js';
 import { stackModule, projectPreamble, stackCue, moduleCue, SUPPORTED_TECHS } from '../catalog.js';
-import { buildIndex, buildSkillsSection, type IndexEntry, titleOf } from '../index-emitter.js';
+import { buildIndex, buildSkillsSection, buildMemorySection, type IndexEntry, titleOf } from '../index-emitter.js';
 import { linkAgent, readConfiguredAgents, SUPPORTED_AGENTS } from '../links.js';
-import type { LockFile, SkillEntry } from '../types.js';
+import type { LockFile, SkillEntry, MemoryEntry } from '../types.js';
+import { runMemoryList } from './memory.js';
 import type { PackageResolver } from '../package-resolver.js';
 
 const VERSION = '0.2.0';
@@ -18,7 +19,12 @@ const GITIGNORE_BLOCK = [
   '/.github/copilot-instructions.md',
 ].join('\n');
 
-export function buildProjectIndex(root: string, technologies: string[], skills: Record<string, SkillEntry> = {}): string {
+export function buildProjectIndex(
+  root: string,
+  technologies: string[],
+  skills: Record<string, SkillEntry> = {},
+  memoryEntries: MemoryEntry[] | null = null,
+): string {
   const sehDir = projectSehDir(root);
   const entries: IndexEntry[] = [];
   const projectMd = path.join(sehDir, 'project.md');
@@ -36,9 +42,16 @@ export function buildProjectIndex(root: string, technologies: string[], skills: 
   for (const tech of technologies) {
     entries.push({ title: titleOf(stackModule(tech)), relPath: `.seh/stack/${tech}.md`, cue: stackCue(tech) });
   }
-  const index = buildIndex(projectPreamble(), entries);
+  let result = buildIndex(projectPreamble(), entries);
+
   const skillsSection = buildSkillsSection(skills);
-  return skillsSection ? index.trimEnd() + '\n\n' + skillsSection + '\n' : index;
+  if (skillsSection) result = result.trimEnd() + '\n\n' + skillsSection + '\n';
+
+  if (memoryEntries !== null) {
+    result = result.trimEnd() + '\n\n' + buildMemorySection(memoryEntries) + '\n';
+  }
+
+  return result;
 }
 
 function ensureGitignore(root: string): void {
@@ -74,7 +87,11 @@ export function runSync(opts: {
 
   fs.mkdirSync(projectSehDir(opts.root), { recursive: true });
   const skills = opts.resolver ? opts.resolver.skills() : {};
-  fs.writeFileSync(projectCanonicalIndex(opts.root), buildProjectIndex(opts.root, opts.technologies, skills));
+  const memoryDir = projectMemoryDir(opts.root);
+  const memoryEntries = fs.existsSync(memoryDir)
+    ? runMemoryList({ root: opts.root }).entries
+    : null;
+  fs.writeFileSync(projectCanonicalIndex(opts.root), buildProjectIndex(opts.root, opts.technologies, skills, memoryEntries));
   written.push(path.join('.seh', 'AGENTS.md'));
 
   const lock: LockFile = { version: VERSION, technologies: opts.technologies, generatedAt: new Date().toISOString() };

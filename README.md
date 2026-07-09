@@ -347,6 +347,102 @@ routing, the section is omitted entirely.
 
 ---
 
+## Memory
+
+`.seh/memory/` stores typed markdown files that agents read for persistent
+project context — decisions made, constraints discovered, learnings earned,
+problems still open. Files are committed to the repo so the whole team (and
+every agent) shares the same memory.
+
+### Memory file format
+
+```markdown
+---
+type: decision
+---
+
+# Auth strategy
+
+Chose JWT over sessions. Sessions required sticky routing which complicates
+the Docker setup. JWT is stateless and works across all replicas.
+```
+
+**Types:**
+
+| Type | When to use |
+|------|-------------|
+| `decision` | A choice made and why (architecture, tech, approach) |
+| `constraint` | A hard rule discovered (never do X, always do Y) |
+| `learning` | Something non-obvious that cost time to figure out |
+| `problem` | Unresolved issue to pick up next session |
+
+### Memory commands
+
+#### `seh memory add <name> [--constraint | --learning | --problem]`
+
+Creates `.seh/memory/<name>.md` with the correct frontmatter and opens
+`$EDITOR` (prints the file path if `$EDITOR` is unset). Default type is
+`decision`. Does not overwrite an existing file.
+
+```bash
+seh memory add auth-strategy              # type: decision (default)
+seh memory add rate-limiting --problem
+seh memory add jwt-expiry --learning
+seh memory add url-structure --constraint
+```
+
+#### `seh memory list`
+
+Shows all memory files grouped by type:
+
+```
+Decisions
+  auth-strategy       Chose JWT over sessions
+  db-migrations       Use Flyway, not Liquibase
+
+Constraints
+  url-structure       Never expose user IDs in URLs
+
+Learnings
+  jwt-expiry          Access tokens must be short-lived (<15m)
+
+Open problems
+  rate-limiting       Strategy unresolved — Redis vs in-process
+```
+
+#### `seh memory remove <name>`
+
+Deletes `.seh/memory/<name>.md`.
+
+### Memory in AGENTS.md
+
+`seh sync` appends a `## Memory` section to `.seh/AGENTS.md` whenever
+`.seh/memory/` exists. It always includes a protocol block instructing agents
+to write memory at session end, plus an index of existing files grouped by type:
+
+```markdown
+## Memory
+
+Write to `.seh/memory/` at end of every session:
+- **decision** — a choice made and why (architecture, tech, approach)
+- **constraint** — a hard rule discovered (never do X, always do Y)
+- **learning** — something non-obvious that cost time to figure out
+- **problem** — unresolved issue to pick up next session
+
+Run: `seh memory add <name> [--decision|--constraint|--learning|--problem]`
+
+### Decisions
+- [Auth strategy](.seh/memory/auth-strategy.md) — Chose JWT over sessions
+
+### Open problems
+- [Rate limiting](.seh/memory/rate-limiting.md) — Strategy unresolved
+```
+
+If `.seh/memory/` is empty the protocol block is still rendered (so new agents
+know how to populate it). If the directory doesn't exist the section is omitted.
+
+---
+
 ## Agent skill directories
 
 All supported agents have confirmed user-level skill directories (as of 2026-07):

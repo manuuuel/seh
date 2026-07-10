@@ -15,7 +15,8 @@
     "build": "tsup src/cli.ts --format esm --dts --clean",
     "dev": "tsx src/cli.ts",
     "test": "vitest run",
-    "try": "bash scripts/try.sh"
+    "try": "bash scripts/try.sh",
+    "prepublishOnly": "npm run build && npm test"
   },
   "engines": { "node": ">=18" },
   "dependencies": { "commander": "^12.0.0", "prompts": "^2.4.2" },

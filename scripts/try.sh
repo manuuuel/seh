@@ -13,7 +13,7 @@ run() { echo "+ seh $*"; node "$CLI" "$@"; echo; }
 echo "### Sandbox HOME=$HOME (your real home is untouched)"; echo
 
 echo "== 1. Global harness (symlink Claude, Codex, Gemini) =="
-run init --global --tools claude,codex,gemini --yes
+run init --global --agents claude,codex,gemini --yes
 echo "  ~/.seh contents:"; find "$HOME/.seh" -type f | sed "s#$HOME#~#" | sort; echo
 echo "  Claude symlink -> $(readlink "$HOME/.claude/CLAUDE.md" | sed "s#$HOME#~#")"
 echo "  Codex symlink -> $(readlink "$HOME/.codex/AGENTS.md" | sed "s#$HOME#~#")"

@@ -7,6 +7,9 @@
 - Choose `moduleResolution` to match the runtime (`nodenext`/`bundler`); emit declarations for libraries and keep build output out of VCS.
 - Enable `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes` for real index/optional safety.
 
+## Architecture & boundaries
+- JavaScript's architecture rules apply — layered structure, explicit dependency wiring. Additionally: DI wiring must preserve type inference — avoid `any`-typed service locators or containers that erase the types of what they resolve.
+
 ## Formatting & linting
 - Use `typescript-eslint` with type-aware rules enabled; the project config wins. Same formatter as JavaScript.
 
@@ -21,6 +24,9 @@
 ## Error handling
 - Don't type-assert parsed or external data — validate, then narrow. Type error/result shapes at boundaries.
 
+## API & data conventions
+- JavaScript's API conventions apply — versioned contracts, schema-validated bodies, additive migrations. Additionally: generate or validate TypeScript types from the same schema that defines the API contract (e.g. `openapi-typescript`, `zod` schemas as the single source for both runtime validation and static types) — request/response types must not be able to drift from the contract they describe.
+
 ## Testing
 - Runtime testing as in JavaScript; type-check in CI with `tsc --noEmit`. Add type-level tests where they earn their keep.
 
@@ -29,6 +35,9 @@
 
 ## Performance & concurrency
 - Types are erased at runtime — never rely on them for validation. Concurrency rules are identical to JavaScript.
+
+## CI/CD & deployment
+- JavaScript's deployment rules apply — multi-stage Docker, health/readiness endpoints, fail-fast env config, feature flags. Additionally: `tsc --noEmit` is a required CI step before the build stage — type errors fail the pipeline, not just lint warnings.
 
 ## Observability
 - Type log payloads; otherwise follow the JavaScript structured-logging rules.

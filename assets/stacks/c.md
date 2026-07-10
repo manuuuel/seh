@@ -5,6 +5,10 @@
 - Separate headers and sources; keep public headers minimal and documented.
 - Build hardened where supported: `-D_FORTIFY_SOURCE=2`, `-fstack-protector-strong`, PIE/RELRO.
 
+## Architecture & boundaries
+- Expose a minimal public API via headers; hide internals with `static` linkage or opaque structs (pimpl-style) so implementation details can change without breaking callers.
+- Avoid circular header dependencies; document who owns (and who must free) every pointer that crosses a module boundary.
+
 ## Formatting & linting
 - Format with `clang-format`; run `clang-tidy` and compile `-Wall -Wextra -Werror` clean. The project config is authoritative.
 
@@ -19,6 +23,11 @@
 ## Error handling
 - Report failures consistently (status codes / `errno`); free every resource on every path (goto-cleanup pattern). No leaks on error.
 
+## API & data conventions
+- Version the public ABI explicitly — semantic-version any shared library (`.so`/`.dll`), and use symbol versioning where the platform supports it.
+- Never change a released struct's layout, size, or field order without a major version bump — ABI breakage is a contract breakage.
+- Document the wire/data format (endianness, alignment, padding) for anything serialized to disk or over a network.
+
 ## Testing
 - Unit-test with a framework (Unity/Check/CMocka); run under ASan/UBSan and valgrind. Keep tests deterministic.
 
@@ -28,6 +37,11 @@
 
 ## Performance & concurrency
 - Measure before optimizing. For threads, guard shared state (mutex/atomics) and avoid data races; document thread-safety.
+
+## CI/CD & deployment
+- Pin the toolchain version; build reproducibly so the same source produces byte-identical output across machines.
+- Cross-compile for every target platform the project ships, as part of the same pipeline that builds the primary target.
+- Package artifacts with a documented install layout (headers, the library, a `pkg-config` file); run the full sanitizer suite (ASan/UBSan) in CI before every release, not just on `main`.
 
 ## Observability
 - Log through one consistent facility (no secrets); make failures diagnosable (`errno`, context).

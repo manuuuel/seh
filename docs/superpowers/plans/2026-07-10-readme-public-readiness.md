@@ -1,3 +1,49 @@
+# README Public-Readiness Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** Restructure `README.md` so a first-time visitor sees the value
+proposition and a runnable example before architecture/reference content,
+per `docs/superpowers/specs/2026-07-10-readme-public-readiness-design.md`.
+
+**Architecture:** Single-file markdown reorganization. No code changes. All
+existing reference sections (Commands, Harness Packages, Skills, Memory,
+Agent skill directories, Installation, Try it, Development) are preserved
+verbatim and moved below two new sections (Quick Start, Why seh) plus a
+Table of Contents and badges row. The `## License` heading is removed
+entirely — no replacement footer line — since `LICENSE` and
+`package.json`'s `"license": "MIT"` already cover it.
+
+**Tech Stack:** Markdown only.
+
+## Global Constraints
+
+- Every existing sentence in the command/package/skills/memory reference
+  sections must be preserved verbatim; only section order changes.
+- No npm version badge (package not yet published to npm — would 404).
+- No `## License` section and no footer license line.
+- `## Contributing` section links to `CONTRIBUTING.md` (created in the next
+  sub-project, immediately after this one).
+- TOC anchors must match GitHub's anchor-generation rules exactly
+  (lowercase, spaces → hyphens, punctuation other than hyphen/underscore
+  stripped).
+
+---
+
+### Task 1: Restructure README.md
+
+**Files:**
+- Modify: `README.md` (full rewrite of file, content sourced from existing
+  file plus two new sections)
+
+**Interfaces:**
+- N/A (markdown only, no code interfaces)
+
+- [ ] **Step 1: Write the new `README.md`**
+
+Replace the entire contents of `README.md` with the following:
+
+```markdown
 # se-harness
 
 [![CI](https://github.com/manuuuel/seh/actions/workflows/ci.yml/badge.svg)](https://github.com/manuuuel/seh/actions/workflows/ci.yml)
@@ -554,3 +600,28 @@ npm run dev      # run the CLI via tsx without building
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for how to propose changes.
+```
+
+- [ ] **Step 2: Verify TOC anchors resolve**
+
+Run: `grep -oE '^##+ .*' README.md`
+Expected: every heading printed corresponds to one TOC entry above (13
+entries: Quick Start, Why seh, Layers, The two shapes of `AGENTS.md`,
+Commands, Harness Packages, Skills, Memory, Agent skill directories,
+Installation, Try it (sandboxed demo), Development, Contributing). Confirm
+by eye there is no `## License` heading and no stray footer content after
+`## Contributing`.
+
+- [ ] **Step 3: Confirm no unrelated regressions**
+
+Run: `npm run build && npm test`
+Expected: build succeeds, all tests pass (README changes don't touch
+`src/`, so this should be unaffected — this step exists to catch any
+accidental side effect, e.g. a stray file touched).
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add README.md
+git commit -m "docs(readme): restructure for public readiness"
+```

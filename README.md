@@ -21,7 +21,6 @@ Portable, tool-agnostic AI coding harness generator. One source of truth,
 - [Installation](#installation)
 - [Try it (sandboxed demo)](#try-it-sandboxed-demo)
 - [Development](#development)
-- [Contributing](#contributing)
 
 ## Quick Start
 
@@ -550,7 +549,3 @@ npm run build    # compile to dist/
 npm test         # run the test suite (155 tests)
 npm run dev      # run the CLI via tsx without building
 ```
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for how to propose changes.

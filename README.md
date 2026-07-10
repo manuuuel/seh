@@ -25,7 +25,7 @@ Portable, tool-agnostic AI coding harness generator. One source of truth,
 ## Quick Start
 
 ```bash
-npm install -g se-harness
+npm install -g github:manuuuel/seh
 
 # Once per machine: unified global ruleset + agent symlinks
 seh init --global --agents claude,codex --yes
@@ -505,11 +505,21 @@ All supported agents have confirmed user-level skill directories (as of 2026-07)
 
 ## Installation
 
-### From npm (when published)
+### Global install
+
+Installs straight from GitHub — no npm account needed:
 
 ```bash
-npm install -g se-harness
+npm install -g github:manuuuel/seh
 ```
+
+Pin a specific version:
+
+```bash
+npm install -g github:manuuuel/seh#v0.2.0
+```
+
+After install, `seh` is on your `$PATH`. To uninstall: `npm uninstall -g se-harness`.
 
 ### From source (development)
 
@@ -526,7 +536,7 @@ To uninstall: `npm unlink -g se-harness`.
 ### Per-project
 
 ```bash
-npm install --save-dev se-harness
+npm install --save-dev github:manuuuel/seh
 npx seh init
 ```
 

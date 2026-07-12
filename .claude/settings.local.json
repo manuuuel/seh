@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx skills *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git -C /home/manuuuel/pocs/seh status)",
+      "Bash(git -C /home/manuuuel/pocs/seh log --oneline -3)",
+      "WebSearch",
+      "Bash(gh api *)",
+      "Bash(gh search *)"
+    ]
+  }
+}

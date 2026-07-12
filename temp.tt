@@ -1,0 +1,225 @@
+# seh Host Profiles + Model Profiles Idea
+
+## Summary
+
+Build portable host profiles first, with model profiles as the first module inside them.
+
+Why:
+- User goal: CLI helps build harness and make it portable between hosts.
+- Existing `seh package` already moves rules, templates, and skills.
+- Missing piece: reproducible host agent setup.
+- Models and memory are host-level choices, but should be versioned in the harness package.
+
+## Core concept
+
+```text
+harness package
+├── global/AGENTS.md
+├── skills/
+├── profiles/
+│   ├── personal.json
+│   ├── work.json
+│   └── ci.json
+├── models/
+│   ├── sonnet.json
+│   ├── gpt-5-codex.json
+│   └── gemini-pro.json
+└── memory/
+    ├── global.md
+    ├── project-rules.md
+    └── team.md
+```
+
+Then:
+
+```bash
+seh package install --profile personal
+```
+
+Would install:
+- global harness
+- selected agent symlinks
+- skills
+- model defaults per agent
+- memory files/symlinks where safe
+
+## Recommended design direction
+
+### 1. `profiles/` = portable install recipe
+
+Profile says what to install on this host.
+
+Example:
+
+```json
+{
+  "name": "personal",
+  "agents": ["claude", "codex", "pi", "gemini", "agents"],
+  "skills": ["brainstorming", "caveman", "tdd"],
+  "modelProfile": "default",
+  "memoryProfile": "personal"
+}
+```
+
+Commands:
+
+```bash
+seh profile list
+seh profile show personal
+seh package install --profile personal
+```
+
+Why useful:
+- New machine setup becomes one command.
+- Teams can have `work`, `oss`, `ci`, `minimal`.
+- Avoids stuffing all decisions into flags.
+
+### 2. `models/` = declarative model preferences, not API config
+
+Do not manage secrets or provider auth.
+
+Model profile stores safe metadata only:
+- preferred model per agent
+- reasoning/effort if agent supports config
+- context style hints
+- fallback model
+- notes on tuning
+
+Example:
+
+```json
+{
+  "defaultAgent": "claude",
+  "agents": {
+    "claude": {
+      "model": "claude-sonnet-4-5",
+      "reasoning": "standard"
+    },
+    "codex": {
+      "model": "gpt-5-codex",
+      "reasoning": "high"
+    },
+    "gemini": {
+      "model": "gemini-2.5-pro"
+    }
+  }
+}
+```
+
+Important boundary:
+- `seh` can record and validate preferences universally.
+- `seh` only writes agent-specific config where stable and documented.
+- If agent config format is unstable: print instructions, do not guess.
+
+### 3. `memory/` = later module, safer as explicit opt-in
+
+Memory is sensitive. Do not rush.
+
+Design memory as opt-in profiles:
+
+```json
+{
+  "files": [
+    {
+      "source": "memory/global.md",
+      "target": "~/.agents/memory.md",
+      "agents": ["agents", "pi"],
+      "mode": "symlink"
+    }
+  ]
+}
+```
+
+Rules:
+- never include secrets
+- warnings before install
+- maybe `seh memory scan` for obvious secrets
+- no automatic import from existing memory until user confirms
+- project memory vs global memory separate
+
+### 4. Add `seh doctor` for portability validation
+
+High value.
+
+```bash
+seh doctor
+seh doctor --profile personal
+```
+
+Checks:
+- active package exists
+- expected dirs exist
+- skills present/fetchable
+- symlinks valid
+- model profile valid
+- memory files present
+- unsupported agent config skipped clearly
+- no drift
+
+This turns `seh` from generator into harness portability manager.
+
+## Best MVP
+
+Do not start with memory. Too risky.
+
+MVP:
+
+```text
+Host profiles + model profile metadata + doctor
+```
+
+Commands:
+
+```bash
+seh profile list
+seh profile show <name>
+seh package install --profile <name>
+seh doctor --profile <name>
+```
+
+Package shape:
+
+```text
+profiles/<name>.json
+models/<name>.json
+```
+
+Profile schema:
+
+```json
+{
+  "agents": ["claude", "codex", "pi"],
+  "skills": ["brainstorming", "caveman"],
+  "modelProfile": "default"
+}
+```
+
+Model schema:
+
+```json
+{
+  "agents": {
+    "claude": { "model": "claude-sonnet-4-5" },
+    "codex": { "model": "gpt-5-codex" },
+    "pi": { "model": "claude-sonnet-4-5" }
+  }
+}
+```
+
+Behavior:
+- `install --profile` calls existing install logic with profile agents/skills.
+- validates model profile.
+- prints model setup plan.
+- no secrets, no provider tokens, no hidden config writes in v1.
+- later add safe per-agent config writers.
+
+## Why this order
+
+1. Profiles solve portability immediately.
+2. Model metadata gives structure without risky vendor-specific config writes.
+3. Doctor makes setup trustworthy.
+4. Memory comes after privacy model is solid.
+
+## Recommendation
+
+Brainstorm `Host Profiles + Model Profiles MVP` as the first spec.

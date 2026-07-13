@@ -91,6 +91,20 @@ describe('runInitGlobal with skills section', () => {
     expect(c).not.toContain('## Skills');
   });
 
+  it('preserves packagePath in config.json when re-run with force', () => {
+    const home = tmpHome();
+    runInitGlobal({ home, agents: ['claude'] });
+    const cfgFile = path.join(home, '.seh', 'config.json');
+    const c = JSON.parse(fs.readFileSync(cfgFile, 'utf8'));
+    c.packagePath = '/some/pkg';
+    fs.writeFileSync(cfgFile, JSON.stringify(c));
+    // as `seh package install --harness --force` does:
+    runInitGlobal({ home, agents: ['claude', 'codex'], force: true });
+    const after = JSON.parse(fs.readFileSync(cfgFile, 'utf8'));
+    expect(after.packagePath).toBe('/some/pkg');
+    expect(after.agents).toEqual(['claude', 'codex']);
+  });
+
   it('appends the Skills section to a package global/AGENTS.md as well', () => {
     const home = tmpHome();
     const pkg = fs.mkdtempSync(path.join(os.tmpdir(), 'sehpkg-'));

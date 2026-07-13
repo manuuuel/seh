@@ -31,7 +31,7 @@ function fail(err: unknown) {
 
 export function buildProgram(): Command {
   const program = new Command();
-  program.name('seh').description('Portable AI coding harness generator').version('0.4.0');
+  program.name('seh').description('Portable AI coding harness generator').version('0.4.1');
 
   const resolver = readResolver(os.homedir());
 

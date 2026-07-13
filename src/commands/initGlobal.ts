@@ -45,7 +45,18 @@ export function runInitGlobal(opts: {
   if (fs.existsSync(cfg) && !opts.force) {
     skipped.push('config.json');
   } else {
-    fs.writeFileSync(cfg, JSON.stringify({ agents: opts.agents ?? [] }, null, 2) + '\n');
+    // Preserve existing keys (notably `packagePath` set by `seh package use`)
+    // so regenerating the harness does not detach the active package.
+    let existing: Record<string, unknown> = {};
+    if (fs.existsSync(cfg)) {
+      try {
+        existing = JSON.parse(fs.readFileSync(cfg, 'utf8'));
+      } catch {
+        existing = {};
+      }
+    }
+    const agents = opts.agents ?? (existing.agents as string[] | undefined) ?? [];
+    fs.writeFileSync(cfg, JSON.stringify({ ...existing, agents }, null, 2) + '\n');
     created.push('config.json');
   }
 

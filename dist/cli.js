@@ -8101,7 +8101,16 @@ function runInitGlobal(opts) {
   if (fs2.existsSync(cfg) && !opts.force) {
     skipped.push("config.json");
   } else {
-    fs2.writeFileSync(cfg, JSON.stringify({ agents: opts.agents ?? [] }, null, 2) + "\n");
+    let existing = {};
+    if (fs2.existsSync(cfg)) {
+      try {
+        existing = JSON.parse(fs2.readFileSync(cfg, "utf8"));
+      } catch {
+        existing = {};
+      }
+    }
+    const agents = opts.agents ?? existing.agents ?? [];
+    fs2.writeFileSync(cfg, JSON.stringify({ ...existing, agents }, null, 2) + "\n");
     created.push("config.json");
   }
   return { created, skipped };
@@ -8273,7 +8282,7 @@ function runMemoryRemove(opts) {
 }
 
 // src/commands/sync.ts
-var VERSION = "0.4.0";
+var VERSION = "0.4.1";
 var GITIGNORE_MARKER = "# seh \u2014 generated tool symlinks (regenerate with `seh sync`)";
 var GITIGNORE_BLOCK = [
   GITIGNORE_MARKER,
@@ -8873,7 +8882,7 @@ function fail(err) {
 }
 function buildProgram() {
   const program2 = new Command();
-  program2.name("seh").description("Portable AI coding harness generator").version("0.4.0");
+  program2.name("seh").description("Portable AI coding harness generator").version("0.4.1");
   const resolver = readResolver(os7.homedir());
   program2.command("init").description("Initialize the global harness (--global) or the current project").option("-g, --global", "set up the host-level global harness (~/.seh)").option("-f, --force", "overwrite existing files").option("--tech <list>", "comma-separated technologies (non-interactive)").option("--agents <list>", "comma-separated agents to symlink (global, non-interactive)").option("-y, --yes", "accept detected technologies without prompting").action(async (opts) => {
     try {

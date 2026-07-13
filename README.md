@@ -317,7 +317,9 @@ seh skills add github:you/xlsx --vendor --optional
 ```
 
 Routing is stored in `harness.json` and rendered into a `## Skills` section in
-AGENTS.md by `seh sync`, so agents always know which skills to invoke and when.
+both the project `AGENTS.md` (by `seh sync`) and the global `~/.seh/AGENTS.md`
+(by `seh package install --harness`), so agents always know which skills to
+invoke and when.
 
 #### `seh skills update [name]`
 
@@ -369,8 +371,9 @@ Shows skills in the active package with their routing mode:
 
 ### Skill routing in AGENTS.md
 
-`seh sync` appends a `## Skills` section to `.seh/AGENTS.md` when any skill has
-routing configured:
+The same `## Skills` section is appended to the project `.seh/AGENTS.md` (by
+`seh sync`) and to the global `~/.seh/AGENTS.md` (by
+`seh package install --harness`) whenever a skill has routing configured:
 
 ```markdown
 ## Skills

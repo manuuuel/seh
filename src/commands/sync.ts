@@ -9,7 +9,7 @@ import type { LockFile, SkillEntry, MemoryEntry } from '../types.js';
 import { runMemoryList } from './memory.js';
 import type { PackageResolver } from '../package-resolver.js';
 
-const VERSION = '0.2.0';
+const VERSION = '0.3.0';
 const GITIGNORE_MARKER = '# seh — generated tool symlinks (regenerate with `seh sync`)';
 const GITIGNORE_BLOCK = [
   GITIGNORE_MARKER,

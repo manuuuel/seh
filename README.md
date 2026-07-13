@@ -25,7 +25,7 @@ Portable, tool-agnostic AI coding harness generator. One source of truth,
 ## Quick Start
 
 ```bash
-npm install -g github:manuuuel/seh
+curl -fsSL https://raw.githubusercontent.com/manuuuel/seh/main/scripts/install.sh | sh
 
 # Once per machine: unified global ruleset + agent symlinks
 seh init --global --agents claude,codex --yes
@@ -508,30 +508,34 @@ All supported agents have confirmed user-level skill directories (as of 2026-07)
 
 ## Installation
 
-seh is distributed from GitHub — no npm account needed. It ships a prebuilt
-`dist/`, so installs need no build step.
+seh is distributed from GitHub — no npm registry account needed.
 
-### Global install
+### Install / update (recommended)
 
-```bash
-npm install -g github:manuuuel/seh          # latest (main)
-npm install -g github:manuuuel/seh#v0.3.0   # pin a release tag
-seh --version
-```
-
-**Update:** re-run the same command — it refetches and reinstalls the latest
-`main` (or the tag you name). To follow releases, bump the `#vX.Y.Z` tag.
-
-**Uninstall:** `npm uninstall -g se-harness`.
-
-**Troubleshooting** — if a previous install left a broken entry (npm errors with
-`ENOTDIR` on reinstall), clear it and retry:
+One command installs a **self-contained build** (deps bundled) and puts `seh` on
+your PATH — no npm, no build step, no global `node_modules`:
 
 ```bash
-npm uninstall -g se-harness      # or remove the stale .../lib/node_modules/se-harness
-npm cache clean --force
-npm install -g github:manuuuel/seh
+curl -fsSL https://raw.githubusercontent.com/manuuuel/seh/main/scripts/install.sh | sh
 ```
+
+- **Update:** re-run the same command.
+- **Pin a version:** `curl -fsSL .../scripts/install.sh | SEH_REF=v0.4.0 sh`
+- Installs to `~/.local/share/seh`, symlinks `~/.local/bin/seh`
+  (override via `SEH_HOME` / `SEH_BIN`). Requires `node` on PATH.
+- **Uninstall:** `rm -rf ~/.local/share/seh ~/.local/bin/seh`
+
+### Via npm (alternative)
+
+```bash
+npm install -g github:manuuuel/seh          # latest main
+npm install -g github:manuuuel/seh#v0.4.0   # a tag
+```
+
+npm installs go through npm's git-dep preparation, which can fail with `ENOTDIR`
+if a previous global install left a broken entry. If that happens, remove the
+stale `.../lib/node_modules/se-harness`, run `npm cache clean --force`, and retry
+— or just use the curl installer above, which avoids npm entirely.
 
 ### From source (development)
 

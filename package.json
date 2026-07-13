@@ -1,6 +1,6 @@
 {
   "name": "se-harness",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Portable, tool-agnostic AI coding harness generator. One source of truth via AGENTS.md — a unified global ruleset plus per-project, technology-aware guideline modules.",
   "type": "module",
   "bin": {
@@ -33,7 +33,7 @@
     "code-quality"
   ],
   "scripts": {
-    "build": "tsup src/cli.ts --format esm --dts --clean",
+    "build": "tsup",
     "dev": "tsx src/cli.ts",
     "test": "vitest run",
     "try": "bash scripts/try.sh",

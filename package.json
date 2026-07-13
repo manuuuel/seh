@@ -12,9 +12,6 @@
   ],
   "license": "MIT",
   "author": "manuuuel",
-  "publishConfig": {
-    "access": "public"
-  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/manuuuel/seh.git"

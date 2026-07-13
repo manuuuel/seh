@@ -24,10 +24,10 @@ echo "seh: installing ref '$REF' -> $SHARE"
 rm -rf "$SHARE"
 mkdir -p "$SHARE" "$BIN"
 
-# Try the ref as a tag first, then as a branch.
-extract() { curl -fsSL "https://codeload.github.com/$REPO/tar.gz/$1" | tar xz -C "$SHARE" --strip-components=1; }
-if ! extract "refs/tags/$REF" 2>/dev/null; then
-  extract "refs/heads/$REF"
+# codeload accepts a bare ref (branch OR tag) — no refs/ prefix, no probing.
+if ! curl -fsSL "https://codeload.github.com/$REPO/tar.gz/$REF" | tar xz -C "$SHARE" --strip-components=1; then
+  echo "seh: error: failed to download or extract ref '$REF'" >&2
+  exit 1
 fi
 
 if [ ! -f "$SHARE/dist/cli.js" ]; then

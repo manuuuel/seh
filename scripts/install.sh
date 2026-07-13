@@ -25,9 +25,9 @@ rm -rf "$SHARE"
 mkdir -p "$SHARE" "$BIN"
 
 # Try the ref as a tag first, then as a branch.
-fetch() { curl -fsSL "https://codeload.github.com/$REPO/tar.gz/$1"; }
-if ! fetch "refs/tags/$REF"  | tar xz -C "$SHARE" --strip-components=1 2>/dev/null; then
-  fetch "refs/heads/$REF" | tar xz -C "$SHARE" --strip-components=1
+extract() { curl -fsSL "https://codeload.github.com/$REPO/tar.gz/$1" | tar xz -C "$SHARE" --strip-components=1; }
+if ! extract "refs/tags/$REF" 2>/dev/null; then
+  extract "refs/heads/$REF"
 fi
 
 if [ ! -f "$SHARE/dist/cli.js" ]; then

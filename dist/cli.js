@@ -370,7 +370,7 @@ function runMemoryRemove(opts) {
 }
 
 // src/commands/sync.ts
-var VERSION = "0.2.0";
+var VERSION = "0.3.0";
 var GITIGNORE_MARKER = "# seh \u2014 generated tool symlinks (regenerate with `seh sync`)";
 var GITIGNORE_BLOCK = [
   GITIGNORE_MARKER,
@@ -970,7 +970,7 @@ function fail(err) {
 }
 function buildProgram() {
   const program = new Command();
-  program.name("seh").description("Portable AI coding harness generator").version("0.2.0");
+  program.name("seh").description("Portable AI coding harness generator").version("0.3.0");
   const resolver = readResolver(os7.homedir());
   program.command("init").description("Initialize the global harness (--global) or the current project").option("-g, --global", "set up the host-level global harness (~/.seh)").option("-f, --force", "overwrite existing files").option("--tech <list>", "comma-separated technologies (non-interactive)").option("--agents <list>", "comma-separated agents to symlink (global, non-interactive)").option("-y, --yes", "accept detected technologies without prompting").action(async (opts) => {
     try {

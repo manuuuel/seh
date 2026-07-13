@@ -61,3 +61,50 @@ describe('runInitGlobal with resolver', () => {
     expect(content).toContain('# Craftsmanship');
   });
 });
+
+describe('runInitGlobal with skills section', () => {
+  it('appends a ## Skills section built from invoke metadata, after the ruleset', () => {
+    const home = tmpHome();
+    runInitGlobal({
+      home,
+      skills: {
+        brainstorming: { type: 'vendor', invoke: { mode: 'when', condition: 'before build work' } },
+        caveman: { type: 'vendor', invoke: { mode: 'always', label: 'compressed output' } },
+        'find-skills': { type: 'vendor', invoke: { mode: 'optional' } },
+      },
+    });
+    const c = fs.readFileSync(path.join(home, '.seh', 'AGENTS.md'), 'utf8');
+    expect(c).toContain('## Skills');
+    expect(c).toContain('Always invoke:');
+    expect(c).toContain('- `caveman` — compressed output');
+    expect(c).toContain('Invoke when:');
+    expect(c).toContain('- `brainstorming` — before build work');
+    expect(c).toContain('Optional:');
+    expect(c).toContain('- `find-skills`');
+    expect(c.indexOf('# Craftsmanship')).toBeLessThan(c.indexOf('## Skills'));
+  });
+
+  it('omits the Skills section when no skills carry invoke metadata', () => {
+    const home = tmpHome();
+    runInitGlobal({ home, skills: { x: { type: 'vendor' } } });
+    const c = fs.readFileSync(path.join(home, '.seh', 'AGENTS.md'), 'utf8');
+    expect(c).not.toContain('## Skills');
+  });
+
+  it('appends the Skills section to a package global/AGENTS.md as well', () => {
+    const home = tmpHome();
+    const pkg = fs.mkdtempSync(path.join(os.tmpdir(), 'sehpkg-'));
+    fs.mkdirSync(packageGlobalDir(pkg), { recursive: true });
+    fs.writeFileSync(packageGlobalAgentsMd(pkg), '# Package Rules\n');
+    const resolver = new PackageResolver(pkg);
+    runInitGlobal({
+      home,
+      resolver,
+      skills: { tdd: { type: 'vendor', invoke: { mode: 'when', condition: 'test-first' } } },
+    });
+    const c = fs.readFileSync(path.join(home, '.seh', 'AGENTS.md'), 'utf8');
+    expect(c).toContain('# Package Rules');
+    expect(c).toContain('## Skills');
+    expect(c).toContain('- `tdd` — test-first');
+  });
+});

@@ -53,7 +53,11 @@ export function runPackageInstall(opts: {
   if (doHarness) {
     const resolver = new PackageResolver(packagePath);
     const packageAgents = readPackageAgents(packagePath);
-    runInitGlobal({ home, agents: packageAgents, resolver, force: opts.force });
+    const hj = packageHarnessJson(packagePath);
+    const skills = fs.existsSync(hj)
+      ? (JSON.parse(fs.readFileSync(hj, 'utf8')) as HarnessPackage).skills
+      : undefined;
+    runInitGlobal({ home, agents: packageAgents, resolver, force: opts.force, skills });
     installedHarness = true;
   }
 

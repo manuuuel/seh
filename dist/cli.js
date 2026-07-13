@@ -188,7 +188,9 @@ function runInitGlobal(opts) {
   if (fs2.existsSync(idx) && !opts.force) {
     skipped.push("AGENTS.md");
   } else {
-    const content = opts.resolver?.globalAgentsMd() ?? buildDocument(globalPreamble(), orderedGlobalSections());
+    let content = opts.resolver?.globalAgentsMd() ?? buildDocument(globalPreamble(), orderedGlobalSections());
+    const skillsSection = opts.skills ? buildSkillsSection(opts.skills) : "";
+    if (skillsSection) content = content.trimEnd() + "\n\n" + skillsSection + "\n";
     fs2.writeFileSync(idx, content);
     created.push("AGENTS.md");
   }
@@ -888,7 +890,9 @@ function runPackageInstall(opts) {
   if (doHarness) {
     const resolver = new PackageResolver(packagePath);
     const packageAgents = readPackageAgents(packagePath);
-    runInitGlobal({ home: home2, agents: packageAgents, resolver, force: opts.force });
+    const hj = packageHarnessJson(packagePath);
+    const skills = fs12.existsSync(hj) ? JSON.parse(fs12.readFileSync(hj, "utf8")).skills : void 0;
+    runInitGlobal({ home: home2, agents: packageAgents, resolver, force: opts.force, skills });
     installedHarness = true;
   }
   if (doSkills) {

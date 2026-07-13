@@ -73,6 +73,23 @@ describe('runPackageInstall --harness', () => {
   });
 });
 
+describe('runPackageInstall --harness skills section', () => {
+  it('renders ## Skills into ~/.seh/AGENTS.md from harness.json invoke metadata', () => {
+    const { pkg, home } = tmpPkgWithSkill('brainstorming');
+    fs.writeFileSync(path.join(pkg, 'global', 'AGENTS.md'), '# Rules\n');
+    const hj = path.join(pkg, 'harness.json');
+    const h = JSON.parse(fs.readFileSync(hj, 'utf8'));
+    h.skills.brainstorming = { type: 'vendor', invoke: { mode: 'when', condition: 'before build work' } };
+    fs.writeFileSync(hj, JSON.stringify(h, null, 2) + '\n');
+    runPackageUse({ packagePath: pkg, home });
+    runPackageInstall({ harness: true, home });
+    const c = fs.readFileSync(path.join(home, '.seh', 'AGENTS.md'), 'utf8');
+    expect(c).toContain('# Rules');
+    expect(c).toContain('## Skills');
+    expect(c).toContain('- `brainstorming` — before build work');
+  });
+});
+
 describe('runPackageInstall --all', () => {
   it('installs both harness and skills', () => {
     const { pkg, home } = tmpPkgWithSkill('caveman');

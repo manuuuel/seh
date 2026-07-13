@@ -1,8 +1,9 @@
 import fs from 'node:fs';
 import { globalDir, globalIndexFile, globalConfigFile } from '../paths.js';
 import { globalModules, globalPreamble } from '../catalog.js';
-import { buildDocument } from '../index-emitter.js';
+import { buildDocument, buildSkillsSection } from '../index-emitter.js';
 import type { PackageResolver } from '../package-resolver.js';
+import type { SkillEntry } from '../types.js';
 
 // Global sections, craftsmanship first (a forced, prominent principle), then the
 // rest in filename order.
@@ -22,6 +23,7 @@ export function runInitGlobal(opts: {
   agents?: string[];
   force?: boolean;
   resolver?: PackageResolver;
+  skills?: Record<string, SkillEntry>;
 }): { created: string[]; skipped: string[] } {
   const created: string[] = [];
   const skipped: string[] = [];
@@ -32,7 +34,9 @@ export function runInitGlobal(opts: {
   if (fs.existsSync(idx) && !opts.force) {
     skipped.push('AGENTS.md');
   } else {
-    const content = opts.resolver?.globalAgentsMd() ?? buildDocument(globalPreamble(), orderedGlobalSections());
+    let content = opts.resolver?.globalAgentsMd() ?? buildDocument(globalPreamble(), orderedGlobalSections());
+    const skillsSection = opts.skills ? buildSkillsSection(opts.skills) : '';
+    if (skillsSection) content = content.trimEnd() + '\n\n' + skillsSection + '\n';
     fs.writeFileSync(idx, content);
     created.push('AGENTS.md');
   }

@@ -1,6 +1,6 @@
 {
   "name": "se-harness",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Portable, tool-agnostic AI coding harness generator. One source of truth via AGENTS.md — a unified global ruleset plus per-project, technology-aware guideline modules.",
   "type": "module",
   "bin": {

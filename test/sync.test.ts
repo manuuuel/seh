@@ -46,7 +46,7 @@ describe('runSync', () => {
     expect(res.written).toContain('.seh/AGENTS.md');
     expect(res.written).toContain('seh.lock');
     const lock = JSON.parse(fs.readFileSync(path.join(r, 'seh.lock'), 'utf8'));
-    expect(lock.version).toBe('0.4.0');
+    expect(lock.version).toBe('0.4.1');
     expect(lock.technologies).toEqual(['typescript']);
   });
   it('throws on unknown technology', () => {

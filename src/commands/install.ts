@@ -1,26 +1,14 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import { execSync } from 'node:child_process';
 import { readGlobalConfig, linkSkill } from '../links.js';
 import { PackageResolver } from '../package-resolver.js';
 import { runInitGlobal } from './initGlobal.js';
 import {
-  packageSkillsDir, packageSkillDir, packageHarnessJson,
+  packageSkillsDir, packageSkillDir,
   packageGlobalConfigJson, sehSkillsDir, sehSkillDir,
 } from '../paths.js';
-import type { HarnessPackage } from '../types.js';
-
-function copyDir(src: string, dest: string): void {
-  fs.mkdirSync(dest, { recursive: true });
-  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
-    if (entry.name === '.git') continue;
-    const s = path.join(src, entry.name);
-    const d = path.join(dest, entry.name);
-    if (entry.isDirectory()) copyDir(s, d);
-    else fs.copyFileSync(s, d);
-  }
-}
+import { cloneAt, readHarness } from '../units.js';
 
 function readPackageAgents(packagePath: string): string[] {
   const p = packageGlobalConfigJson(packagePath);
@@ -53,31 +41,17 @@ export function runPackageInstall(opts: {
   if (doHarness) {
     const resolver = new PackageResolver(packagePath);
     const packageAgents = readPackageAgents(packagePath);
-    const hj = packageHarnessJson(packagePath);
-    const skills = fs.existsSync(hj)
-      ? (JSON.parse(fs.readFileSync(hj, 'utf8')) as HarnessPackage).skills
-      : undefined;
+    const skills = readHarness(packagePath)?.skills;
     runInitGlobal({ home, agents: packageAgents, resolver, force: opts.force, skills });
     installedHarness = true;
   }
 
   if (doSkills) {
-    const hj = packageHarnessJson(packagePath);
-    if (fs.existsSync(hj)) {
-      const harness: HarnessPackage = JSON.parse(fs.readFileSync(hj, 'utf8'));
-      for (const [name, entry] of Object.entries(harness.skills ?? {})) {
-        if (entry.type !== 'reference') continue;
-        const skillDir = packageSkillDir(packagePath, name);
-        if (fs.existsSync(skillDir) && !opts.force) continue;
-        const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sehins-'));
-        try {
-          execSync(`git clone --depth 1 --branch ${entry.ref} ${entry.source} ${tmp}`, { stdio: 'pipe' });
-          if (fs.existsSync(skillDir)) fs.rmSync(skillDir, { recursive: true, force: true });
-          copyDir(tmp, skillDir);
-        } finally {
-          fs.rmSync(tmp, { recursive: true, force: true });
-        }
-      }
+    for (const [name, entry] of Object.entries(readHarness(packagePath)?.skills ?? {})) {
+      if (entry.type !== 'reference') continue;
+      const skillDir = packageSkillDir(packagePath, name);
+      if (fs.existsSync(skillDir) && !opts.force) continue;
+      cloneAt(entry.source, entry.ref, skillDir);
     }
 
     const skillsDir = packageSkillsDir(packagePath);

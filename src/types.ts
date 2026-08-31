@@ -18,12 +18,20 @@ export type SkillEntry =
   | { type: 'vendor'; invoke?: SkillInvoke }
   | { type: 'reference'; source: string; ref: string; invoke?: SkillInvoke };
 
+/** Per-agent override of adapter detection: agent -> subpath inside the plugin. */
+export type PluginPaths = Record<string, string>;
+
+export type PluginEntry =
+  | { type: 'vendor'; paths?: PluginPaths }
+  | { type: 'reference'; source: string; ref: string; paths?: PluginPaths };
+
 export type HarnessPackage = {
   name: string;
   version: string;
   description?: string;
   modelTag?: string;
   skills?: Record<string, SkillEntry>;
+  plugins?: Record<string, PluginEntry>;
 };
 
 export type MemoryType = 'decision' | 'constraint' | 'learning' | 'problem';

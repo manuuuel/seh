@@ -34,8 +34,11 @@ function readJson(file: string): Record<string, unknown> | null {
  * the plugin directory is rejected rather than symlinked.
  */
 function safeSubpath(p: string): string | null {
-  if (path.isAbsolute(p)) return null;
-  const rel = path.normalize(p).replace(/^\.\//, '').replace(/\/+$/, '');
+  // Validate in POSIX terms on every platform: a Windows separator, drive or UNC
+  // prefix must not slip past the traversal check on a POSIX host, or vice versa.
+  const unified = p.replace(/\\/g, '/');
+  if (path.isAbsolute(p) || unified.startsWith('/') || /^[a-zA-Z]:/.test(unified)) return null;
+  const rel = path.posix.normalize(unified).replace(/^\.\//, '').replace(/\/+$/, '');
   if (rel === '' || rel === '.') return '.';
   return rel.split('/').includes('..') ? null : rel;
 }

@@ -15,9 +15,16 @@ import type { PluginPaths } from '../types.js';
 
 export type PluginInstall = { name: string; linked: string[]; skipped: string[] };
 
-function symlink(target: string, source: string): void {
+function symlink(target: string, source: string, force?: boolean): void {
   fs.mkdirSync(path.dirname(target), { recursive: true });
-  if (fs.lstatSync(target, { throwIfNoEntry: false })) fs.rmSync(target, { recursive: true, force: true });
+  const existing = fs.lstatSync(target, { throwIfNoEntry: false });
+  if (existing && !existing.isSymbolicLink() && !force) {
+    throw new Error(
+      `Refusing to replace ${target}: it is not a seh symlink. ` +
+      `Move it aside, or re-run with --force to overwrite it.`,
+    );
+  }
+  if (existing) fs.rmSync(target, { recursive: true, force: true });
   try {
     fs.symlinkSync(path.relative(path.dirname(target), source), target);
   } catch (err) {
@@ -42,7 +49,7 @@ function installPlugin(opts: {
 
   fs.mkdirSync(sehPluginsDir(opts.home), { recursive: true });
   if (!fs.lstatSync(intermediate, { throwIfNoEntry: false }) || opts.force) {
-    symlink(intermediate, source);
+    symlink(intermediate, source, opts.force);
   }
 
   const adapters = detectAdapters(source, opts.paths);
@@ -51,7 +58,7 @@ function installPlugin(opts: {
     if (!opts.agents.includes(adapter.agent)) continue;
     const linkName = linkNameFor(opts.name, adapter.subpath);
     const target = path.join(adapter.targetDir(opts.home), linkName);
-    symlink(target, path.join(intermediate, adapter.subpath));
+    symlink(target, path.join(intermediate, adapter.subpath), opts.force);
     linked.push(adapter.agent);
   }
 
@@ -133,6 +140,7 @@ export function runPackageInstall(opts: {
     const harness = readHarness(packagePath);
     const entries = Object.entries(harness?.plugins ?? {});
 
+    // Refuse before fetching anything: Claude loads plugins from its skills directory.
     for (const [name] of entries) {
       if (harness?.skills && name in harness.skills) {
         throw new Error(

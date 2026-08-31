@@ -9,6 +9,7 @@ import { packageHarnessJson } from '../src/paths.js';
 import { runPackageInit, runPackageUse } from '../src/commands/package.js';
 import * as packageModule from '../src/commands/package.js';
 import * as skillsModule from '../src/commands/skills.js';
+import * as pluginsModule from '../src/commands/plugins.js';
 
 describe('cli (v2)', () => {
   it('is named seh with a version', () => {
@@ -18,7 +19,7 @@ describe('cli (v2)', () => {
   });
   it('registers the v2 commands', () => {
     const names = buildProgram().commands.map((c) => c.name()).sort();
-    expect(names).toEqual(['check', 'init', 'link', 'memory', 'package', 'skills', 'sync']);
+    expect(names).toEqual(['check', 'init', 'link', 'memory', 'package', 'plugins', 'skills', 'sync']);
   });
   it('exposes all supported agents', () => {
     expect([...SUPPORTED_AGENTS]).toContain('gemini');
@@ -55,6 +56,69 @@ describe('seh memory commands (CLI)', () => {
     expect(sub).toContain('add');
     expect(sub).toContain('list');
     expect(sub).toContain('remove');
+  });
+});
+
+describe('seh plugins commands (CLI)', () => {
+  const fakeStatus = { packagePath: '/fake/pkg', pkg: { name: 'x', version: '0.1.0' }, dirs: {} };
+
+  it('registers add, update, list subcommands', () => {
+    const pluginsCmd = buildProgram().commands.find((c) => c.name() === 'plugins');
+    expect(pluginsCmd).toBeDefined();
+    const subNames = pluginsCmd!.commands.map((c) => c.name());
+    expect(subNames).toEqual(expect.arrayContaining(['add', 'update', 'list']));
+  });
+
+  it('seh plugins add --vendor vendors the plugin under its repo name', async () => {
+    const status = vi.spyOn(packageModule, 'runPackageStatus').mockReturnValue(fakeStatus as any);
+    const add = vi.spyOn(pluginsModule, 'runPluginsAdd').mockImplementation(() => {});
+    try {
+      await buildProgram().parseAsync(['node', 'seh', 'plugins', 'add', 'github:DietrichGebert/ponytail', '--vendor']);
+      expect(add).toHaveBeenCalledWith(expect.objectContaining({
+        pluginName: 'ponytail',
+        type: 'vendor',
+        url: 'https://github.com/DietrichGebert/ponytail',
+        packagePath: '/fake/pkg',
+      }));
+    } finally {
+      status.mockRestore();
+      add.mockRestore();
+    }
+  });
+
+  it('seh plugins add --reference records the given ref', async () => {
+    const status = vi.spyOn(packageModule, 'runPackageStatus').mockReturnValue(fakeStatus as any);
+    const add = vi.spyOn(pluginsModule, 'runPluginsAdd').mockImplementation(() => {});
+    try {
+      await buildProgram().parseAsync([
+        'node', 'seh', 'plugins', 'add', 'github:owner/thing', '--reference', '--ref', 'v2',
+      ]);
+      expect(add).toHaveBeenCalledWith(expect.objectContaining({ type: 'reference', ref: 'v2' }));
+    } finally {
+      status.mockRestore();
+      add.mockRestore();
+    }
+  });
+
+  it('seh plugins add --path passes an adapter override', async () => {
+    const status = vi.spyOn(packageModule, 'runPackageStatus').mockReturnValue(fakeStatus as any);
+    const add = vi.spyOn(pluginsModule, 'runPluginsAdd').mockImplementation(() => {});
+    try {
+      await buildProgram().parseAsync([
+        'node', 'seh', 'plugins', 'add', 'github:owner/thing', '--vendor', '--path', 'pi=pi-extension',
+      ]);
+      expect(add).toHaveBeenCalledWith(expect.objectContaining({ paths: { pi: 'pi-extension' } }));
+    } finally {
+      status.mockRestore();
+      add.mockRestore();
+    }
+  });
+
+  it('seh package install exposes a --plugins flag', () => {
+    const install = buildProgram().commands
+      .find((c) => c.name() === 'package')!.commands
+      .find((c) => c.name() === 'install')!;
+    expect(install.options.map((o) => o.long)).toContain('--plugins');
   });
 });
 

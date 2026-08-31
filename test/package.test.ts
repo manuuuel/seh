@@ -10,6 +10,7 @@ import {
   packageTemplatesStackDir,
   packageTemplatesProjectDir,
   packageProjectsDir,
+  packagePluginsDir,
   globalConfigFile,
 } from '../src/paths.js';
 
@@ -30,6 +31,12 @@ describe('runPackageInit', () => {
     expect(fs.existsSync(packageTemplatesStackDir(p))).toBe(true);
     expect(fs.existsSync(packageTemplatesProjectDir(p))).toBe(true);
     expect(fs.existsSync(packageProjectsDir(p))).toBe(true);
+  });
+
+  it('scaffolds the plugins directory', () => {
+    const p = path.join(tmpDir(), 'my-harness');
+    runPackageInit({ packagePath: p });
+    expect(fs.existsSync(packagePluginsDir(p))).toBe(true);
   });
 
   it('harness.json has correct name from directory basename', () => {
@@ -170,5 +177,6 @@ describe('runPackageStatus', () => {
     expect(status.dirs['templates/stack/']).toBe(true);
     expect(status.dirs['templates/project/']).toBe(true);
     expect(status.dirs['projects/']).toBe(true);
+    expect(status.dirs['plugins/']).toBe(true);
   });
 });

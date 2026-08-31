@@ -8697,14 +8697,22 @@ function readJson(file) {
     return null;
   }
 }
-var normalize = (p) => {
-  const rel = path10.normalize(p).replace(/^\.\//, "").replace(/\/+$/, "");
-  return rel === "" || rel === "." ? "." : rel;
-};
+function safeSubpath(p) {
+  const unified = p.replace(/\\/g, "/");
+  if (path10.isAbsolute(p) || unified.startsWith("/") || /^[a-zA-Z]:/.test(unified)) return null;
+  const rel = path10.posix.normalize(unified).replace(/^\.\//, "").replace(/\/+$/, "");
+  if (rel === "" || rel === ".") return ".";
+  return rel.split("/").includes("..") ? null : rel;
+}
 function detectPi(root) {
   const pkg = readJson(path10.join(root, "package.json"));
   const declared = pkg?.["pi"]?.extensions;
-  if (Array.isArray(declared) && declared.some((e) => typeof e === "string" && has(root, e))) return ".";
+  const resolvable = (e) => {
+    if (typeof e !== "string") return false;
+    const rel = safeSubpath(e);
+    return rel !== null && has(root, rel);
+  };
+  if (Array.isArray(declared) && declared.some(resolvable)) return ".";
   return has(root, "index.ts") || has(root, "index.js") ? "." : null;
 }
 var OPENCODE_PLUGIN_DIRS = [".opencode/plugin", ".opencode/plugins"];
@@ -8712,8 +8720,8 @@ var OPENCODE_EXTS = [".ts", ".js", ".mjs"];
 function detectOpencode(root) {
   const main = readJson(path10.join(root, "package.json"))?.["main"];
   if (typeof main === "string") {
-    const rel = normalize(main);
-    if (rel.startsWith(".opencode/") && has(root, rel)) return rel;
+    const rel = safeSubpath(main);
+    if (rel !== null && rel.startsWith(".opencode/") && has(root, rel)) return rel;
   }
   for (const dir of OPENCODE_PLUGIN_DIRS) {
     if (!has(root, dir)) continue;
@@ -8754,7 +8762,17 @@ function detectAdapters(pluginRoot, overrides = {}) {
   const found = [];
   for (const adapter of PLUGIN_ADAPTERS) {
     const override = overrides[adapter.agent];
-    const subpath = override !== void 0 ? normalize(override) : adapter.detect(pluginRoot);
+    let subpath;
+    if (override !== void 0) {
+      subpath = safeSubpath(override);
+      if (subpath === null) {
+        throw new Error(
+          `Invalid path override '${override}' for agent '${adapter.agent}': it points outside the plugin directory.`
+        );
+      }
+    } else {
+      subpath = adapter.detect(pluginRoot);
+    }
     if (subpath === null) continue;
     found.push({ agent: adapter.agent, subpath, targetDir: adapter.targetDir });
   }
@@ -8769,7 +8787,11 @@ function linkNameFor(pluginName, subpath) {
 function coverage(packagePath, name, paths) {
   const dir = packagePluginDir(packagePath, name);
   if (!fs13.existsSync(dir)) return [];
-  return detectAdapters(dir, paths).map((a) => a.agent);
+  try {
+    return detectAdapters(dir, paths).map((a) => a.agent);
+  } catch {
+    return [];
+  }
 }
 function runPluginsAdd(opts) {
   const pluginDir = packagePluginDir(opts.packagePath, opts.pluginName);
@@ -8933,9 +8955,15 @@ function readResolver(home2 = os5.homedir()) {
 }
 
 // src/commands/install.ts
-function symlink(target, source) {
+function symlink(target, source, force) {
   fs15.mkdirSync(path12.dirname(target), { recursive: true });
-  if (fs15.lstatSync(target, { throwIfNoEntry: false })) fs15.rmSync(target, { recursive: true, force: true });
+  const existing = fs15.lstatSync(target, { throwIfNoEntry: false });
+  if (existing && !existing.isSymbolicLink() && !force) {
+    throw new Error(
+      `Refusing to replace ${target}: it is not a seh symlink. Move it aside, or re-run with --force to overwrite it.`
+    );
+  }
+  if (existing) fs15.rmSync(target, { recursive: true, force: true });
   try {
     fs15.symlinkSync(path12.relative(path12.dirname(target), source), target);
   } catch (err) {
@@ -8947,7 +8975,7 @@ function installPlugin(opts) {
   const intermediate = sehPluginDir(opts.home, opts.name);
   fs15.mkdirSync(sehPluginsDir(opts.home), { recursive: true });
   if (!fs15.lstatSync(intermediate, { throwIfNoEntry: false }) || opts.force) {
-    symlink(intermediate, source);
+    symlink(intermediate, source, opts.force);
   }
   const adapters = detectAdapters(source, opts.paths);
   const linked = [];
@@ -8955,7 +8983,7 @@ function installPlugin(opts) {
     if (!opts.agents.includes(adapter.agent)) continue;
     const linkName = linkNameFor(opts.name, adapter.subpath);
     const target = path12.join(adapter.targetDir(opts.home), linkName);
-    symlink(target, path12.join(intermediate, adapter.subpath));
+    symlink(target, path12.join(intermediate, adapter.subpath), opts.force);
     linked.push(adapter.agent);
   }
   return { name: opts.name, linked, skipped: opts.agents.filter((a) => !linked.includes(a)) };

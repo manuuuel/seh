@@ -1,38 +1,7 @@
 import fs from 'node:fs';
-import path from 'node:path';
-import os from 'node:os';
-import { execSync } from 'node:child_process';
-import { packageSkillDir, packageSkillsDir, packageHarnessJson } from '../paths.js';
-import type { HarnessPackage, SkillEntry, SkillInvoke } from '../types.js';
-
-function copyDir(src: string, dest: string): void {
-  fs.mkdirSync(dest, { recursive: true });
-  for (const entry of fs.readdirSync(src, { withFileTypes: true })) {
-    if (entry.name === '.git') continue;
-    const s = path.join(src, entry.name);
-    const d = path.join(dest, entry.name);
-    if (entry.isDirectory()) copyDir(s, d);
-    else fs.copyFileSync(s, d);
-  }
-}
-
-function addToGitignore(packagePath: string, entry: string): void {
-  const gi = path.join(packagePath, '.gitignore');
-  const existing = fs.existsSync(gi) ? fs.readFileSync(gi, 'utf8') : '';
-  if (existing.includes(entry)) return;
-  const sep = existing.length > 0 && !existing.endsWith('\n') ? '\n' : '';
-  fs.writeFileSync(gi, existing + sep + entry + '\n');
-}
-
-function readHarness(packagePath: string): HarnessPackage {
-  const p = packageHarnessJson(packagePath);
-  if (!fs.existsSync(p)) throw new Error(`No harness.json at ${packagePath}`);
-  return JSON.parse(fs.readFileSync(p, 'utf8'));
-}
-
-function writeHarness(packagePath: string, harness: HarnessPackage): void {
-  fs.writeFileSync(packageHarnessJson(packagePath), JSON.stringify(harness, null, 2) + '\n');
-}
+import { packageSkillDir, packageSkillsDir } from '../paths.js';
+import type { SkillInvoke } from '../types.js';
+import { addToGitignore, cloneAt, requireHarness, writeHarness } from '../units.js';
 
 export function runSkillsAdd(opts: {
   url: string;
@@ -49,19 +18,11 @@ export function runSkillsAdd(opts: {
     throw new Error(`Skill '${opts.skillName}' already exists at ${skillDir}. Use --force to overwrite.`);
   }
 
-  const harness = readHarness(opts.packagePath);
+  const harness = requireHarness(opts.packagePath);
   if (!harness.skills) harness.skills = {};
 
   if (opts.type === 'vendor') {
-    const ref = opts.ref ?? 'main';
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sehskv-'));
-    try {
-      execSync(`git clone --depth 1 --branch ${ref} ${opts.url} ${tmp}`, { stdio: 'pipe' });
-      if (fs.existsSync(skillDir)) fs.rmSync(skillDir, { recursive: true, force: true });
-      copyDir(tmp, skillDir);
-    } finally {
-      fs.rmSync(tmp, { recursive: true, force: true });
-    }
+    cloneAt(opts.url, opts.ref ?? 'main', skillDir);
     harness.skills[opts.skillName] = opts.invoke
       ? { type: 'vendor', invoke: opts.invoke }
       : { type: 'vendor' };
@@ -79,7 +40,7 @@ export function runSkillsUpdate(opts: {
   skillName?: string;
   packagePath: string;
 }): { updated: string[] } {
-  const harness = readHarness(opts.packagePath);
+  const harness = requireHarness(opts.packagePath);
   const entries = Object.entries(harness.skills ?? {});
   const toUpdate = opts.skillName
     ? entries.filter(([name]) => name === opts.skillName)
@@ -94,15 +55,7 @@ export function runSkillsUpdate(opts: {
     if (entry.type !== 'reference') {
       throw new Error(`Skill '${name}' is vendored — nothing to update`);
     }
-    const skillDir = packageSkillDir(opts.packagePath, name);
-    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sehsku-'));
-    try {
-      execSync(`git clone --depth 1 --branch ${entry.ref} ${entry.source} ${tmp}`, { stdio: 'pipe' });
-      if (fs.existsSync(skillDir)) fs.rmSync(skillDir, { recursive: true, force: true });
-      copyDir(tmp, skillDir);
-    } finally {
-      fs.rmSync(tmp, { recursive: true, force: true });
-    }
+    cloneAt(entry.source, entry.ref, packageSkillDir(opts.packagePath, name));
     updated.push(name);
   }
   return { updated };
@@ -111,7 +64,7 @@ export function runSkillsUpdate(opts: {
 export function runSkillsList(opts: {
   packagePath: string;
 }): { skills: Array<{ name: string; type: string; source?: string; ref?: string; onDisk: boolean; invoke?: SkillInvoke }> } {
-  const harness = readHarness(opts.packagePath);
+  const harness = requireHarness(opts.packagePath);
   const skills = Object.entries(harness.skills ?? {}).map(([name, entry]) => ({
     name,
     type: entry.type,

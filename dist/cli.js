@@ -971,8 +971,8 @@ var require_command = __commonJS({
     "use strict";
     var EventEmitter = __require("events").EventEmitter;
     var childProcess = __require("child_process");
-    var path14 = __require("path");
-    var fs15 = __require("fs");
+    var path15 = __require("path");
+    var fs18 = __require("fs");
     var process2 = __require("process");
     var { Argument: Argument2, humanReadableArgName } = require_argument();
     var { CommanderError: CommanderError2 } = require_error();
@@ -1904,11 +1904,11 @@ Expecting one of '${allowedValues.join("', '")}'`);
         let launchWithNode = false;
         const sourceExt = [".js", ".ts", ".tsx", ".mjs", ".cjs"];
         function findFile(baseDir, baseName) {
-          const localBin = path14.resolve(baseDir, baseName);
-          if (fs15.existsSync(localBin)) return localBin;
-          if (sourceExt.includes(path14.extname(baseName))) return void 0;
+          const localBin = path15.resolve(baseDir, baseName);
+          if (fs18.existsSync(localBin)) return localBin;
+          if (sourceExt.includes(path15.extname(baseName))) return void 0;
           const foundExt = sourceExt.find(
-            (ext) => fs15.existsSync(`${localBin}${ext}`)
+            (ext) => fs18.existsSync(`${localBin}${ext}`)
           );
           if (foundExt) return `${localBin}${foundExt}`;
           return void 0;
@@ -1920,21 +1920,21 @@ Expecting one of '${allowedValues.join("', '")}'`);
         if (this._scriptPath) {
           let resolvedScriptPath;
           try {
-            resolvedScriptPath = fs15.realpathSync(this._scriptPath);
+            resolvedScriptPath = fs18.realpathSync(this._scriptPath);
           } catch (err) {
             resolvedScriptPath = this._scriptPath;
           }
-          executableDir = path14.resolve(
-            path14.dirname(resolvedScriptPath),
+          executableDir = path15.resolve(
+            path15.dirname(resolvedScriptPath),
             executableDir
           );
         }
         if (executableDir) {
           let localFile = findFile(executableDir, executableFile);
           if (!localFile && !subcommand._executableFile && this._scriptPath) {
-            const legacyName = path14.basename(
+            const legacyName = path15.basename(
               this._scriptPath,
-              path14.extname(this._scriptPath)
+              path15.extname(this._scriptPath)
             );
             if (legacyName !== this._name) {
               localFile = findFile(
@@ -1945,7 +1945,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
           }
           executableFile = localFile || executableFile;
         }
-        launchWithNode = sourceExt.includes(path14.extname(executableFile));
+        launchWithNode = sourceExt.includes(path15.extname(executableFile));
         let proc;
         if (process2.platform !== "win32") {
           if (launchWithNode) {
@@ -2785,7 +2785,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * @return {Command}
        */
       nameFromFilename(filename) {
-        this._name = path14.basename(filename, path14.extname(filename));
+        this._name = path15.basename(filename, path15.extname(filename));
         return this;
       }
       /**
@@ -2799,9 +2799,9 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * @param {string} [path]
        * @return {(string|null|Command)}
        */
-      executableDir(path15) {
-        if (path15 === void 0) return this._executableDir;
-        this._executableDir = path15;
+      executableDir(path16) {
+        if (path16 === void 0) return this._executableDir;
+        this._executableDir = path16;
         return this;
       }
       /**
@@ -3081,8 +3081,8 @@ var require_kleur = __commonJS({
       }
       return beg + str + end;
     }
-    function chain(has2, keys) {
-      let ctx = { has: has2, keys };
+    function chain(has3, keys) {
+      let ctx = { has: has3, keys };
       ctx.reset = $.reset.bind(ctx);
       ctx.bold = $.bold.bind(ctx);
       ctx.dim = $.dim.bind(ctx);
@@ -7907,7 +7907,7 @@ var {
 // src/cli.ts
 var import_prompts = __toESM(require_prompts3(), 1);
 import os7 from "os";
-import path13 from "path";
+import path14 from "path";
 import { fileURLToPath as fileURLToPath2 } from "url";
 import { spawnSync } from "child_process";
 
@@ -7953,6 +7953,10 @@ var sehSkillsDir = (h = home()) => path.join(h, ".seh", "skills");
 var sehSkillDir = (h = home(), name) => path.join(h, ".seh", "skills", name);
 var packageSkillsDir = (p) => path.join(p, "skills");
 var packageSkillDir = (p, name) => path.join(p, "skills", name);
+var sehPluginsDir = (h = home()) => path.join(h, ".seh", "plugins");
+var sehPluginDir = (h = home(), name) => path.join(h, ".seh", "plugins", name);
+var packagePluginsDir = (p) => path.join(p, "plugins");
+var packagePluginDir = (p, name) => path.join(p, "plugins", name);
 var projectMemoryDir = (root) => path.join(projectSehDir(root), "memory");
 var projectMemoryFile = (root, name) => path.join(projectMemoryDir(root), `${name}.md`);
 
@@ -8495,7 +8499,8 @@ function runPackageInit(opts) {
     packageTemplatesStackDir(p),
     packageTemplatesProjectDir(p),
     packageProjectsDir(p),
-    packageSkillsDir(p)
+    packageSkillsDir(p),
+    packagePluginsDir(p)
   ]) {
     fs9.mkdirSync(d, { recursive: true });
   }
@@ -8567,12 +8572,17 @@ function runPackageStatus(opts) {
     "global/": fs9.existsSync(packageGlobalDir(packagePath)),
     "templates/stack/": fs9.existsSync(packageTemplatesStackDir(packagePath)),
     "templates/project/": fs9.existsSync(packageTemplatesProjectDir(packagePath)),
-    "projects/": fs9.existsSync(packageProjectsDir(packagePath))
+    "projects/": fs9.existsSync(packageProjectsDir(packagePath)),
+    "skills/": fs9.existsSync(packageSkillsDir(packagePath)),
+    "plugins/": fs9.existsSync(packagePluginsDir(packagePath))
   };
   return { packagePath, pkg, dirs };
 }
 
 // src/commands/skills.ts
+import fs11 from "fs";
+
+// src/units.ts
 import fs10 from "fs";
 import path9 from "path";
 import os4 from "os";
@@ -8587,6 +8597,29 @@ function copyDir(src, dest) {
     else fs10.copyFileSync(s, d);
   }
 }
+function cloneAt(url, ref, dest) {
+  const tmp = fs10.mkdtempSync(path9.join(os4.tmpdir(), "sehunit-"));
+  try {
+    execSync(`git clone --depth 1 --branch ${ref} ${url} ${tmp}`, { stdio: "pipe" });
+    if (fs10.existsSync(dest)) fs10.rmSync(dest, { recursive: true, force: true });
+    copyDir(tmp, dest);
+  } finally {
+    fs10.rmSync(tmp, { recursive: true, force: true });
+  }
+}
+function readHarness(packagePath) {
+  const p = packageHarnessJson(packagePath);
+  if (!fs10.existsSync(p)) return null;
+  return JSON.parse(fs10.readFileSync(p, "utf8"));
+}
+function requireHarness(packagePath) {
+  const harness = readHarness(packagePath);
+  if (!harness) throw new Error(`No harness.json at ${packagePath}`);
+  return harness;
+}
+function writeHarness(packagePath, harness) {
+  fs10.writeFileSync(packageHarnessJson(packagePath), JSON.stringify(harness, null, 2) + "\n");
+}
 function addToGitignore(packagePath, entry) {
   const gi = path9.join(packagePath, ".gitignore");
   const existing = fs10.existsSync(gi) ? fs10.readFileSync(gi, "utf8") : "";
@@ -8594,31 +8627,17 @@ function addToGitignore(packagePath, entry) {
   const sep = existing.length > 0 && !existing.endsWith("\n") ? "\n" : "";
   fs10.writeFileSync(gi, existing + sep + entry + "\n");
 }
-function readHarness(packagePath) {
-  const p = packageHarnessJson(packagePath);
-  if (!fs10.existsSync(p)) throw new Error(`No harness.json at ${packagePath}`);
-  return JSON.parse(fs10.readFileSync(p, "utf8"));
-}
-function writeHarness(packagePath, harness) {
-  fs10.writeFileSync(packageHarnessJson(packagePath), JSON.stringify(harness, null, 2) + "\n");
-}
+
+// src/commands/skills.ts
 function runSkillsAdd(opts) {
   const skillDir = packageSkillDir(opts.packagePath, opts.skillName);
-  if (fs10.existsSync(skillDir) && !opts.force) {
+  if (fs11.existsSync(skillDir) && !opts.force) {
     throw new Error(`Skill '${opts.skillName}' already exists at ${skillDir}. Use --force to overwrite.`);
   }
-  const harness = readHarness(opts.packagePath);
+  const harness = requireHarness(opts.packagePath);
   if (!harness.skills) harness.skills = {};
   if (opts.type === "vendor") {
-    const ref = opts.ref ?? "main";
-    const tmp = fs10.mkdtempSync(path9.join(os4.tmpdir(), "sehskv-"));
-    try {
-      execSync(`git clone --depth 1 --branch ${ref} ${opts.url} ${tmp}`, { stdio: "pipe" });
-      if (fs10.existsSync(skillDir)) fs10.rmSync(skillDir, { recursive: true, force: true });
-      copyDir(tmp, skillDir);
-    } finally {
-      fs10.rmSync(tmp, { recursive: true, force: true });
-    }
+    cloneAt(opts.url, opts.ref ?? "main", skillDir);
     harness.skills[opts.skillName] = opts.invoke ? { type: "vendor", invoke: opts.invoke } : { type: "vendor" };
   } else {
     harness.skills[opts.skillName] = opts.invoke ? { type: "reference", source: opts.url, ref: opts.ref ?? "main", invoke: opts.invoke } : { type: "reference", source: opts.url, ref: opts.ref ?? "main" };
@@ -8627,7 +8646,7 @@ function runSkillsAdd(opts) {
   writeHarness(opts.packagePath, harness);
 }
 function runSkillsUpdate(opts) {
-  const harness = readHarness(opts.packagePath);
+  const harness = requireHarness(opts.packagePath);
   const entries = Object.entries(harness.skills ?? {});
   const toUpdate = opts.skillName ? entries.filter(([name]) => name === opts.skillName) : entries.filter(([, entry]) => entry.type === "reference");
   if (opts.skillName && toUpdate.length === 0) {
@@ -8638,32 +8657,24 @@ function runSkillsUpdate(opts) {
     if (entry.type !== "reference") {
       throw new Error(`Skill '${name}' is vendored \u2014 nothing to update`);
     }
-    const skillDir = packageSkillDir(opts.packagePath, name);
-    const tmp = fs10.mkdtempSync(path9.join(os4.tmpdir(), "sehsku-"));
-    try {
-      execSync(`git clone --depth 1 --branch ${entry.ref} ${entry.source} ${tmp}`, { stdio: "pipe" });
-      if (fs10.existsSync(skillDir)) fs10.rmSync(skillDir, { recursive: true, force: true });
-      copyDir(tmp, skillDir);
-    } finally {
-      fs10.rmSync(tmp, { recursive: true, force: true });
-    }
+    cloneAt(entry.source, entry.ref, packageSkillDir(opts.packagePath, name));
     updated.push(name);
   }
   return { updated };
 }
 function runSkillsList(opts) {
-  const harness = readHarness(opts.packagePath);
+  const harness = requireHarness(opts.packagePath);
   const skills = Object.entries(harness.skills ?? {}).map(([name, entry]) => ({
     name,
     type: entry.type,
     source: entry.type === "reference" ? entry.source : void 0,
     ref: entry.type === "reference" ? entry.ref : void 0,
-    onDisk: fs10.existsSync(packageSkillDir(opts.packagePath, name)),
+    onDisk: fs11.existsSync(packageSkillDir(opts.packagePath, name)),
     invoke: entry.invoke
   }));
   const skillsDir = packageSkillsDir(opts.packagePath);
-  if (fs10.existsSync(skillsDir)) {
-    for (const entry of fs10.readdirSync(skillsDir, { withFileTypes: true })) {
+  if (fs11.existsSync(skillsDir)) {
+    for (const entry of fs11.readdirSync(skillsDir, { withFileTypes: true })) {
       if (entry.isDirectory() && !skills.find((s) => s.name === entry.name)) {
         skills.push({ name: entry.name, type: "vendor", onDisk: true });
       }
@@ -8672,15 +8683,168 @@ function runSkillsList(opts) {
   return { skills: skills.sort((a, b) => a.name.localeCompare(b.name)) };
 }
 
-// src/commands/install.ts
+// src/commands/plugins.ts
+import fs13 from "fs";
+
+// src/plugin-adapters.ts
 import fs12 from "fs";
-import path11 from "path";
+import path10 from "path";
+var has = (...parts) => fs12.existsSync(path10.join(...parts));
+function readJson(file) {
+  try {
+    return JSON.parse(fs12.readFileSync(file, "utf8"));
+  } catch {
+    return null;
+  }
+}
+var normalize = (p) => {
+  const rel = path10.normalize(p).replace(/^\.\//, "").replace(/\/+$/, "");
+  return rel === "" || rel === "." ? "." : rel;
+};
+function detectPi(root) {
+  const pkg = readJson(path10.join(root, "package.json"));
+  const declared = pkg?.["pi"]?.extensions;
+  if (Array.isArray(declared) && declared.some((e) => typeof e === "string" && has(root, e))) return ".";
+  return has(root, "index.ts") || has(root, "index.js") ? "." : null;
+}
+var OPENCODE_PLUGIN_DIRS = [".opencode/plugin", ".opencode/plugins"];
+var OPENCODE_EXTS = [".ts", ".js", ".mjs"];
+function detectOpencode(root) {
+  const main = readJson(path10.join(root, "package.json"))?.["main"];
+  if (typeof main === "string") {
+    const rel = normalize(main);
+    if (rel.startsWith(".opencode/") && has(root, rel)) return rel;
+  }
+  for (const dir of OPENCODE_PLUGIN_DIRS) {
+    if (!has(root, dir)) continue;
+    const files = fs12.readdirSync(path10.join(root, dir), { withFileTypes: true }).filter((e) => !e.isDirectory() && OPENCODE_EXTS.includes(path10.extname(e.name))).map((e) => `${dir}/${e.name}`);
+    if (files.length === 1) return files[0];
+  }
+  return null;
+}
+var PLUGIN_ADAPTERS = [
+  {
+    agent: "claude",
+    targetDir: (home2) => path10.join(home2, ".claude", "skills"),
+    detect: (root) => has(root, ".claude-plugin", "plugin.json") ? "." : null
+  },
+  {
+    agent: "gemini",
+    targetDir: (home2) => path10.join(home2, ".gemini", "extensions"),
+    detect: (root) => has(root, "gemini-extension.json") ? "." : null
+  },
+  {
+    agent: "pi",
+    targetDir: (home2) => path10.join(home2, ".pi", "agent", "extensions"),
+    detect: detectPi
+  },
+  {
+    agent: "opencode",
+    targetDir: (home2) => path10.join(home2, ".config", "opencode", "plugins"),
+    detect: detectOpencode
+  },
+  {
+    agent: "agents",
+    targetDir: (home2) => path10.join(home2, ".agents", "plugins"),
+    detect: (root) => has(root, ".agents", "plugins", "marketplace.json") ? "." : null
+  }
+];
+var PLUGIN_AGENTS = PLUGIN_ADAPTERS.map((a) => a.agent);
+function detectAdapters(pluginRoot, overrides = {}) {
+  const found = [];
+  for (const adapter of PLUGIN_ADAPTERS) {
+    const override = overrides[adapter.agent];
+    const subpath = override !== void 0 ? normalize(override) : adapter.detect(pluginRoot);
+    if (subpath === null) continue;
+    found.push({ agent: adapter.agent, subpath, targetDir: adapter.targetDir });
+  }
+  return found;
+}
+function linkNameFor(pluginName, subpath) {
+  const ext = subpath === "." ? "" : path10.extname(subpath);
+  return `${pluginName}${ext}`;
+}
+
+// src/commands/plugins.ts
+function coverage(packagePath, name, paths) {
+  const dir = packagePluginDir(packagePath, name);
+  if (!fs13.existsSync(dir)) return [];
+  return detectAdapters(dir, paths).map((a) => a.agent);
+}
+function runPluginsAdd(opts) {
+  const pluginDir = packagePluginDir(opts.packagePath, opts.pluginName);
+  if (fs13.existsSync(pluginDir) && !opts.force) {
+    throw new Error(`Plugin '${opts.pluginName}' already exists at ${pluginDir}. Use --force to overwrite.`);
+  }
+  const harness = requireHarness(opts.packagePath);
+  if (!harness.plugins) harness.plugins = {};
+  const paths = opts.paths && Object.keys(opts.paths).length > 0 ? { paths: opts.paths } : {};
+  if (opts.type === "vendor") {
+    cloneAt(opts.url, opts.ref ?? "main", pluginDir);
+    harness.plugins[opts.pluginName] = { type: "vendor", ...paths };
+  } else {
+    harness.plugins[opts.pluginName] = {
+      type: "reference",
+      source: opts.url,
+      ref: opts.ref ?? "main",
+      ...paths
+    };
+    addToGitignore(opts.packagePath, `plugins/${opts.pluginName}/`);
+  }
+  writeHarness(opts.packagePath, harness);
+}
+function runPluginsUpdate(opts) {
+  const harness = requireHarness(opts.packagePath);
+  const entries = Object.entries(harness.plugins ?? {});
+  const toUpdate = opts.pluginName ? entries.filter(([name]) => name === opts.pluginName) : entries.filter(([, entry]) => entry.type === "reference");
+  if (opts.pluginName && toUpdate.length === 0) {
+    throw new Error(`Plugin '${opts.pluginName}' not found in harness.json`);
+  }
+  const updated = [];
+  for (const [name, entry] of toUpdate) {
+    if (entry.type !== "reference") {
+      throw new Error(`Plugin '${name}' is vendored \u2014 nothing to update`);
+    }
+    cloneAt(entry.source, entry.ref, packagePluginDir(opts.packagePath, name));
+    updated.push(name);
+  }
+  return { updated };
+}
+function runPluginsList(opts) {
+  const harness = requireHarness(opts.packagePath);
+  const plugins = Object.entries(harness.plugins ?? {}).map(([name, entry]) => ({
+    name,
+    type: entry.type,
+    source: entry.type === "reference" ? entry.source : void 0,
+    ref: entry.type === "reference" ? entry.ref : void 0,
+    onDisk: fs13.existsSync(packagePluginDir(opts.packagePath, name)),
+    agents: coverage(opts.packagePath, name, entry.paths)
+  }));
+  const dir = packagePluginsDir(opts.packagePath);
+  if (fs13.existsSync(dir)) {
+    for (const entry of fs13.readdirSync(dir, { withFileTypes: true })) {
+      if (!entry.isDirectory() || plugins.some((p) => p.name === entry.name)) continue;
+      plugins.push({
+        name: entry.name,
+        type: "vendor",
+        source: void 0,
+        ref: void 0,
+        onDisk: true,
+        agents: coverage(opts.packagePath, entry.name)
+      });
+    }
+  }
+  return { plugins: plugins.sort((a, b) => a.name.localeCompare(b.name)) };
+}
+
+// src/commands/install.ts
+import fs15 from "fs";
+import path12 from "path";
 import os6 from "os";
-import { execSync as execSync2 } from "child_process";
 
 // src/package-resolver.ts
-import fs11 from "fs";
-import path10 from "path";
+import fs14 from "fs";
+import path11 from "path";
 import os5 from "os";
 var PackageResolver = class {
   constructor(packagePath) {
@@ -8695,29 +8859,29 @@ var PackageResolver = class {
   }
   stackModule(tech) {
     if (this.packagePath) {
-      const f = path10.join(packageTemplatesStackDir(this.packagePath), `${tech}.md`);
-      if (fs11.existsSync(f)) return fs11.readFileSync(f, "utf8");
+      const f = path11.join(packageTemplatesStackDir(this.packagePath), `${tech}.md`);
+      if (fs14.existsSync(f)) return fs14.readFileSync(f, "utf8");
     }
     return stackModule(tech);
   }
   globalAgentsMd() {
     if (!this.packagePath) return null;
     const p = packageGlobalAgentsMd(this.packagePath);
-    return fs11.existsSync(p) ? fs11.readFileSync(p, "utf8") : null;
+    return fs14.existsSync(p) ? fs14.readFileSync(p, "utf8") : null;
   }
   projectOverlayFiles(repoName) {
     if (!this.packagePath) return [];
-    const overlayDir = path10.join(packageProjectsDir(this.packagePath), repoName);
-    if (!fs11.existsSync(overlayDir)) return [];
+    const overlayDir = path11.join(packageProjectsDir(this.packagePath), repoName);
+    if (!fs14.existsSync(overlayDir)) return [];
     const result = [];
     const walk = (dir) => {
-      for (const entry of fs11.readdirSync(dir, { withFileTypes: true })) {
-        const abs = path10.join(dir, entry.name);
+      for (const entry of fs14.readdirSync(dir, { withFileTypes: true })) {
+        const abs = path11.join(dir, entry.name);
         if (entry.isDirectory()) walk(abs);
         else if (entry.name.endsWith(".md")) {
           result.push({
-            relPath: path10.relative(overlayDir, abs),
-            content: fs11.readFileSync(abs, "utf8")
+            relPath: path11.relative(overlayDir, abs),
+            content: fs14.readFileSync(abs, "utf8")
           });
         }
       }
@@ -8728,22 +8892,22 @@ var PackageResolver = class {
   projectTemplateNames() {
     if (!this.packagePath) return [];
     const dir = packageTemplatesProjectDir(this.packagePath);
-    if (!fs11.existsSync(dir)) return [];
-    return fs11.readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name).sort();
+    if (!fs14.existsSync(dir)) return [];
+    return fs14.readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name).sort();
   }
   projectTemplateFiles(name) {
     if (!this.packagePath) return [];
-    const templateDir = path10.join(packageTemplatesProjectDir(this.packagePath), name);
-    if (!fs11.existsSync(templateDir)) return [];
+    const templateDir = path11.join(packageTemplatesProjectDir(this.packagePath), name);
+    if (!fs14.existsSync(templateDir)) return [];
     const result = [];
     const walk = (dir) => {
-      for (const entry of fs11.readdirSync(dir, { withFileTypes: true })) {
-        const abs = path10.join(dir, entry.name);
+      for (const entry of fs14.readdirSync(dir, { withFileTypes: true })) {
+        const abs = path11.join(dir, entry.name);
         if (entry.isDirectory()) walk(abs);
         else if (entry.name.endsWith(".md")) {
           result.push({
-            relPath: path10.relative(templateDir, abs),
-            content: fs11.readFileSync(abs, "utf8")
+            relPath: path11.relative(templateDir, abs),
+            content: fs14.readFileSync(abs, "utf8")
           });
         }
       }
@@ -8754,8 +8918,8 @@ var PackageResolver = class {
   skills() {
     if (!this.packagePath) return {};
     const p = packageHarnessJson(this.packagePath);
-    if (!fs11.existsSync(p)) return {};
-    const harness = JSON.parse(fs11.readFileSync(p, "utf8"));
+    if (!fs14.existsSync(p)) return {};
+    const harness = JSON.parse(fs14.readFileSync(p, "utf8"));
     return harness.skills ?? {};
   }
 };
@@ -8769,21 +8933,38 @@ function readResolver(home2 = os5.homedir()) {
 }
 
 // src/commands/install.ts
-function copyDir2(src, dest) {
-  fs12.mkdirSync(dest, { recursive: true });
-  for (const entry of fs12.readdirSync(src, { withFileTypes: true })) {
-    if (entry.name === ".git") continue;
-    const s = path11.join(src, entry.name);
-    const d = path11.join(dest, entry.name);
-    if (entry.isDirectory()) copyDir2(s, d);
-    else fs12.copyFileSync(s, d);
+function symlink(target, source) {
+  fs15.mkdirSync(path12.dirname(target), { recursive: true });
+  if (fs15.lstatSync(target, { throwIfNoEntry: false })) fs15.rmSync(target, { recursive: true, force: true });
+  try {
+    fs15.symlinkSync(path12.relative(path12.dirname(target), source), target);
+  } catch (err) {
+    throw new Error(`Cannot create symlink ${target}: ${err instanceof Error ? err.message : String(err)}`);
   }
+}
+function installPlugin(opts) {
+  const source = packagePluginDir(opts.packagePath, opts.name);
+  const intermediate = sehPluginDir(opts.home, opts.name);
+  fs15.mkdirSync(sehPluginsDir(opts.home), { recursive: true });
+  if (!fs15.lstatSync(intermediate, { throwIfNoEntry: false }) || opts.force) {
+    symlink(intermediate, source);
+  }
+  const adapters = detectAdapters(source, opts.paths);
+  const linked = [];
+  for (const adapter of adapters) {
+    if (!opts.agents.includes(adapter.agent)) continue;
+    const linkName = linkNameFor(opts.name, adapter.subpath);
+    const target = path12.join(adapter.targetDir(opts.home), linkName);
+    symlink(target, path12.join(intermediate, adapter.subpath));
+    linked.push(adapter.agent);
+  }
+  return { name: opts.name, linked, skipped: opts.agents.filter((a) => !linked.includes(a)) };
 }
 function readPackageAgents(packagePath) {
   const p = packageGlobalConfigJson(packagePath);
-  if (!fs12.existsSync(p)) return [];
+  if (!fs15.existsSync(p)) return [];
   try {
-    const raw = JSON.parse(fs12.readFileSync(p, "utf8"));
+    const raw = JSON.parse(fs15.readFileSync(p, "utf8"));
     if (Array.isArray(raw.tools) && !raw.agents) return raw.tools;
     return Array.isArray(raw.agents) ? raw.agents : [];
   } catch {
@@ -8797,84 +8978,105 @@ function runPackageInstall(opts) {
   const packagePath = cfg.packagePath;
   const doSkills = opts.skills || opts.all || false;
   const doHarness = opts.harness || opts.all || false;
+  const doPlugins = opts.plugins || opts.all || false;
   const installedSkills = [];
+  const installedPlugins = [];
   let installedHarness = false;
   if (doHarness) {
     const resolver = new PackageResolver(packagePath);
     const packageAgents = readPackageAgents(packagePath);
-    const hj = packageHarnessJson(packagePath);
-    const skills = fs12.existsSync(hj) ? JSON.parse(fs12.readFileSync(hj, "utf8")).skills : void 0;
+    const skills = readHarness(packagePath)?.skills;
     runInitGlobal({ home: home2, agents: packageAgents, resolver, force: opts.force, skills });
     installedHarness = true;
   }
   if (doSkills) {
-    const hj = packageHarnessJson(packagePath);
-    if (fs12.existsSync(hj)) {
-      const harness = JSON.parse(fs12.readFileSync(hj, "utf8"));
-      for (const [name, entry] of Object.entries(harness.skills ?? {})) {
-        if (entry.type !== "reference") continue;
-        const skillDir = packageSkillDir(packagePath, name);
-        if (fs12.existsSync(skillDir) && !opts.force) continue;
-        const tmp = fs12.mkdtempSync(path11.join(os6.tmpdir(), "sehins-"));
-        try {
-          execSync2(`git clone --depth 1 --branch ${entry.ref} ${entry.source} ${tmp}`, { stdio: "pipe" });
-          if (fs12.existsSync(skillDir)) fs12.rmSync(skillDir, { recursive: true, force: true });
-          copyDir2(tmp, skillDir);
-        } finally {
-          fs12.rmSync(tmp, { recursive: true, force: true });
-        }
-      }
+    for (const [name, entry] of Object.entries(readHarness(packagePath)?.skills ?? {})) {
+      if (entry.type !== "reference") continue;
+      const skillDir = packageSkillDir(packagePath, name);
+      if (fs15.existsSync(skillDir) && !opts.force) continue;
+      cloneAt(entry.source, entry.ref, skillDir);
     }
     const skillsDir = packageSkillsDir(packagePath);
-    if (!fs12.existsSync(skillsDir)) return { installedSkills, installedHarness };
-    fs12.mkdirSync(sehSkillsDir(home2), { recursive: true });
-    for (const entry of fs12.readdirSync(skillsDir, { withFileTypes: true })) {
+    if (!fs15.existsSync(skillsDir)) return { installedSkills, installedHarness, installedPlugins };
+    fs15.mkdirSync(sehSkillsDir(home2), { recursive: true });
+    for (const entry of fs15.readdirSync(skillsDir, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue;
       const name = entry.name;
       const pkgSkillPath = packageSkillDir(packagePath, name);
       const sehTarget = sehSkillDir(home2, name);
-      if (fs12.lstatSync(sehTarget, { throwIfNoEntry: false }) && !opts.force) continue;
-      if (fs12.lstatSync(sehTarget, { throwIfNoEntry: false })) {
-        fs12.rmSync(sehTarget, { force: true });
+      if (fs15.lstatSync(sehTarget, { throwIfNoEntry: false }) && !opts.force) continue;
+      if (fs15.lstatSync(sehTarget, { throwIfNoEntry: false })) {
+        fs15.rmSync(sehTarget, { force: true });
       }
-      const rel = path11.relative(path11.dirname(sehTarget), pkgSkillPath);
-      fs12.symlinkSync(rel, sehTarget);
+      const rel = path12.relative(path12.dirname(sehTarget), pkgSkillPath);
+      fs15.symlinkSync(rel, sehTarget);
       for (const agent of opts.agents ?? []) {
         linkSkill(agent, name, home2, sehTarget);
       }
       installedSkills.push(name);
     }
   }
-  return { installedSkills, installedHarness };
+  if (doPlugins) {
+    const harness = readHarness(packagePath);
+    const entries = Object.entries(harness?.plugins ?? {});
+    for (const [name] of entries) {
+      if (harness?.skills && name in harness.skills) {
+        throw new Error(
+          `'${name}' is declared as both a skill and a plugin. Claude loads plugins from its skills directory, so the two would overwrite each other \u2014 rename one.`
+        );
+      }
+    }
+    for (const [name, entry] of entries) {
+      if (entry.type !== "reference") continue;
+      const dir = packagePluginDir(packagePath, name);
+      if (fs15.existsSync(dir) && !opts.force) continue;
+      cloneAt(entry.source, entry.ref, dir);
+    }
+    const pluginsDir = packagePluginsDir(packagePath);
+    if (fs15.existsSync(pluginsDir)) {
+      for (const dir of fs15.readdirSync(pluginsDir, { withFileTypes: true })) {
+        if (!dir.isDirectory()) continue;
+        installedPlugins.push(installPlugin({
+          name: dir.name,
+          packagePath,
+          home: home2,
+          agents: opts.agents ?? [],
+          paths: harness?.plugins?.[dir.name]?.paths,
+          force: opts.force
+        }));
+      }
+    }
+  }
+  return { installedSkills, installedHarness, installedPlugins };
 }
 
 // src/detect.ts
-import fs13 from "fs";
-import path12 from "path";
-var has = (root, f) => fs13.existsSync(path12.join(root, f));
+import fs16 from "fs";
+import path13 from "path";
+var has2 = (root, f) => fs16.existsSync(path13.join(root, f));
 function hasTopLevelC(root) {
   try {
-    return fs13.readdirSync(root).some((f) => f.endsWith(".c"));
+    return fs16.readdirSync(root).some((f) => f.endsWith(".c"));
   } catch {
     return false;
   }
 }
 function detectTechnologies(root) {
   const found = /* @__PURE__ */ new Set();
-  if (has(root, "package.json")) {
+  if (has2(root, "package.json")) {
     found.add("javascript");
-    if (has(root, "tsconfig.json")) found.add("typescript");
+    if (has2(root, "tsconfig.json")) found.add("typescript");
   }
-  if (has(root, "pyproject.toml") || has(root, "requirements.txt")) found.add("python");
-  if (has(root, "go.mod")) found.add("go");
-  if (has(root, "Cargo.toml")) found.add("rust");
-  if (has(root, "pom.xml") || has(root, "build.gradle")) found.add("java");
-  if (has(root, "CMakeLists.txt") || has(root, "Makefile") || hasTopLevelC(root)) found.add("c");
+  if (has2(root, "pyproject.toml") || has2(root, "requirements.txt")) found.add("python");
+  if (has2(root, "go.mod")) found.add("go");
+  if (has2(root, "Cargo.toml")) found.add("rust");
+  if (has2(root, "pom.xml") || has2(root, "build.gradle")) found.add("java");
+  if (has2(root, "CMakeLists.txt") || has2(root, "Makefile") || hasTopLevelC(root)) found.add("c");
   return SUPPORTED_TECHS.filter((t) => found.has(t));
 }
 
 // src/cli.ts
-import fs14 from "fs";
+import fs17 from "fs";
 var parseList = (s) => s ? s.split(",").map((x) => x.trim()).filter(Boolean) : [];
 function fail(err) {
   console.error(`seh error: ${err instanceof Error ? err.message : String(err)}`);
@@ -8882,7 +9084,7 @@ function fail(err) {
 }
 function buildProgram() {
   const program2 = new Command();
-  program2.name("seh").description("Portable AI coding harness generator").version("0.4.1");
+  program2.name("seh").description("Portable AI coding harness generator").version("0.5.0");
   const resolver = readResolver(os7.homedir());
   program2.command("init").description("Initialize the global harness (--global) or the current project").option("-g, --global", "set up the host-level global harness (~/.seh)").option("-f, --force", "overwrite existing files").option("--tech <list>", "comma-separated technologies (non-interactive)").option("--agents <list>", "comma-separated agents to symlink (global, non-interactive)").option("-y, --yes", "accept detected technologies without prompting").action(async (opts) => {
     try {
@@ -8966,7 +9168,7 @@ function buildProgram() {
   program2.command("sync").description("Regenerate the project index + stack modules from seh.lock").action(() => {
     try {
       const root = process.cwd();
-      const lock = JSON.parse(fs14.readFileSync(lockFile(root), "utf8"));
+      const lock = JSON.parse(fs17.readFileSync(lockFile(root), "utf8"));
       const res = runSync({ root, technologies: lock.technologies ?? [], home: os7.homedir(), resolver });
       console.log(`seh: wrote ${res.written.join(", ")}`);
     } catch (err) {
@@ -8995,17 +9197,31 @@ function buildProgram() {
       fail(err);
     }
   });
-  function parseSkillUrl(raw) {
+  function parseRepoUrl(raw) {
     const ghShorthand = raw.match(/^github:([^/]+)\/([^/]+)$/);
-    if (ghShorthand) return { url: `https://github.com/${ghShorthand[1]}/${ghShorthand[2]}`, skillName: ghShorthand[2] };
+    if (ghShorthand) return { url: `https://github.com/${ghShorthand[1]}/${ghShorthand[2]}`, name: ghShorthand[2] };
     const ghUrl = raw.match(/^https?:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?\/?$/);
-    if (ghUrl) return { url: raw, skillName: ghUrl[2] };
+    if (ghUrl) return { url: raw, name: ghUrl[2] };
     throw new Error(`Unsupported URL: ${raw}. Use https://github.com/owner/repo or github:owner/repo`);
+  }
+  function collectPath(mapping, acc) {
+    const eq = mapping.indexOf("=");
+    if (eq < 1) throw new Error(`Invalid --path '${mapping}'. Use --path <agent>=<subpath>.`);
+    const agent = mapping.slice(0, eq);
+    if (!PLUGIN_AGENTS.includes(agent)) {
+      throw new Error(`Unknown agent '${agent}' in --path. Known: ${PLUGIN_AGENTS.join(", ")}.`);
+    }
+    return { ...acc, [agent]: mapping.slice(eq + 1) };
+  }
+  function activePackagePath() {
+    const status = runPackageStatus({ home: os7.homedir() });
+    if (!status.packagePath) throw new Error("No active package. Run `seh package use <path>` first.");
+    return status.packagePath;
   }
   const pkg = program2.command("package").description("Manage harness packages");
   pkg.command("init [path]").description("Scaffold a new harness package").option("-f, --force", "overwrite existing package").action(async (pkgPath, opts) => {
     try {
-      const packagePath = path13.resolve(pkgPath ?? "my-harness");
+      const packagePath = path14.resolve(pkgPath ?? "my-harness");
       const res = runPackageInit({ packagePath, home: os7.homedir(), force: opts.force });
       console.log(`seh: package created at ${packagePath} [${res.created.length} files]`);
       console.log(`  Next: cd ${packagePath} && git init && git add . && git commit -m "init harness"`);
@@ -9016,7 +9232,7 @@ function buildProgram() {
   pkg.command("use <path>").description("Point seh at an existing harness package").action((pkgPath) => {
     try {
       runPackageUse({ packagePath: pkgPath, home: os7.homedir() });
-      console.log(`seh: active package \u2192 ${path13.resolve(pkgPath)}`);
+      console.log(`seh: active package \u2192 ${path14.resolve(pkgPath)}`);
     } catch (err) {
       fail(err);
     }
@@ -9037,16 +9253,17 @@ function buildProgram() {
       fail(err);
     }
   });
-  pkg.command("install").description("Install harness and/or skills from the active package onto this machine").option("--skills", "install skills").option("--harness", "install global harness (AGENTS.md + agent symlinks)").option("--all", "install everything").option("--agents <list>", "comma-separated agents to link skills into").option("-f, --force", "overwrite existing files").action(async (opts) => {
+  pkg.command("install").description("Install harness and/or skills from the active package onto this machine").option("--skills", "install skills").option("--plugins", "install plugins").option("--harness", "install global harness (AGENTS.md + agent symlinks)").option("--all", "install everything").option("--agents <list>", "comma-separated agents to link skills and plugins into").option("-f, --force", "overwrite existing files").action(async (opts) => {
     try {
       let agents = parseList(opts.agents);
-      if ((opts.skills || opts.all) && agents.length === 0) {
+      const needsAgents = opts.skills || opts.plugins || opts.all;
+      if (needsAgents && agents.length === 0) {
         const configured = readGlobalConfig(os7.homedir()).agents;
         const res = await (0, import_prompts.default)({
           type: "multiselect",
           name: "agents",
-          message: "Install skills into which agents?",
-          choices: SUPPORTED_AGENTS.filter((a) => a in SKILL_TARGETS).map((a) => ({ title: a, value: a, selected: configured.includes(a) }))
+          message: "Install into which agents?",
+          choices: SUPPORTED_AGENTS.filter((a) => a in SKILL_TARGETS || PLUGIN_AGENTS.includes(a)).map((a) => ({ title: a, value: a, selected: configured.includes(a) }))
         });
         if (res.agents === void 0) {
           console.log("seh: cancelled.");
@@ -9057,6 +9274,7 @@ function buildProgram() {
       }
       const result = runPackageInstall({
         skills: opts.skills,
+        plugins: opts.plugins,
         harness: opts.harness,
         all: opts.all,
         agents,
@@ -9065,6 +9283,10 @@ function buildProgram() {
       });
       if (result.installedHarness) console.log("seh: harness installed");
       if (result.installedSkills.length > 0) console.log(`seh: skills installed [${result.installedSkills.join(", ")}]`);
+      for (const p of result.installedPlugins) {
+        const skipped = p.skipped.length > 0 ? `  (skipped: ${p.skipped.join(", ")})` : "";
+        console.log(`seh: plugin '${p.name}' \u2192 ${p.linked.join(", ") || "no agent"}${skipped}`);
+      }
     } catch (err) {
       fail(err);
     }
@@ -9072,7 +9294,7 @@ function buildProgram() {
   const skills = program2.command("skills").description("Manage skills in the active harness package");
   skills.command("add <url>").description("Add a skill from a GitHub URL to the active package").option("--vendor", "copy skill files into the package (committed to git)").option("--reference", "track skill as external reference (fetched on install)").option("--ref <branch>", "branch or tag (default: main)").option("-f, --force", "overwrite existing skill").option("--always [label]", "invoke this skill every response").option("--when <condition>", "invoke this skill when condition matches").option("--optional", "skill available, agent decides when to use it").action(async (url, opts) => {
     try {
-      const { url: resolvedUrl, skillName } = parseSkillUrl(url);
+      const { url: resolvedUrl, name: skillName } = parseRepoUrl(url);
       const routingFlagCount = [opts.always !== void 0, !!opts.when, !!opts.optional].filter(Boolean).length;
       if (routingFlagCount > 1) {
         fail(new Error("--always, --when, and --optional are mutually exclusive"));
@@ -9106,9 +9328,7 @@ function buildProgram() {
       } else if (opts.optional) {
         invoke = { mode: "optional" };
       }
-      const status = runPackageStatus({ home: os7.homedir() });
-      if (!status.packagePath) throw new Error("No active package. Run `seh package use <path>` first.");
-      runSkillsAdd({ url: resolvedUrl, skillName, type, ref: opts.ref, packagePath: status.packagePath, force: opts.force, invoke });
+      runSkillsAdd({ url: resolvedUrl, skillName, type, ref: opts.ref, packagePath: activePackagePath(), force: opts.force, invoke });
       console.log(`seh: skill '${skillName}' added (${type})`);
     } catch (err) {
       fail(err);
@@ -9146,6 +9366,68 @@ function buildProgram() {
           else if (s.invoke.mode === "optional") invokeStr = `  optional`;
         }
         console.log(`  ${disk} ${s.name}  [${s.type}]${invokeStr}${src}`);
+      }
+    } catch (err) {
+      fail(err);
+    }
+  });
+  const plugins = program2.command("plugins").description("Manage plugins in the active harness package");
+  plugins.command("add <url>").description("Add an agent plugin from a GitHub URL to the active package").option("--vendor", "copy plugin files into the package (committed to git)").option("--reference", "track plugin as external reference (fetched on install)").option("--ref <branch>", "branch or tag (default: main)").option("--path <agent=subpath>", "override adapter detection for one agent (repeatable)", collectPath, {}).option("-f, --force", "overwrite existing plugin").action(async (url, opts) => {
+    try {
+      const { url: resolvedUrl, name: pluginName } = parseRepoUrl(url);
+      let type;
+      if (opts.vendor) type = "vendor";
+      else if (opts.reference) type = "reference";
+      else {
+        const res = await (0, import_prompts.default)({
+          type: "select",
+          name: "type",
+          message: "How to add this plugin?",
+          choices: [
+            { title: "Vendor (copy into package, commit to git)", value: "vendor" },
+            { title: "Reference (track externally, fetch on install)", value: "reference" }
+          ]
+        });
+        if (res.type === void 0) {
+          console.log("seh: cancelled.");
+          process.exitCode = 0;
+          return;
+        }
+        type = res.type;
+      }
+      runPluginsAdd({
+        url: resolvedUrl,
+        pluginName,
+        type,
+        ref: opts.ref,
+        packagePath: activePackagePath(),
+        force: opts.force,
+        paths: opts.path
+      });
+      console.log(`seh: plugin '${pluginName}' added (${type})`);
+    } catch (err) {
+      fail(err);
+    }
+  });
+  plugins.command("update [name]").description("Re-fetch referenced plugin(s) from source").action((name) => {
+    try {
+      const { updated } = runPluginsUpdate({ pluginName: name, packagePath: activePackagePath() });
+      console.log(`seh: updated [${updated.join(", ") || "none"}]`);
+    } catch (err) {
+      fail(err);
+    }
+  });
+  plugins.command("list").description("List plugins in the active package with the agents they support").action(() => {
+    try {
+      const { plugins: list } = runPluginsList({ packagePath: activePackagePath() });
+      if (list.length === 0) {
+        console.log("seh: no plugins");
+        return;
+      }
+      for (const p of list) {
+        const src = p.source ? `  ${p.source} (${p.ref})` : "";
+        const agents = p.onDisk ? `  agents: ${p.agents.join(", ") || "none"}` : "  (not fetched)";
+        console.log(`  ${p.onDisk ? "\u2713" : "\u2717"} ${p.name}  [${p.type}]${agents}${src}`);
       }
     } catch (err) {
       fail(err);
@@ -9216,7 +9498,7 @@ function isMainModule() {
   const argv1 = process.argv[1];
   if (!argv1) return false;
   try {
-    return fs14.realpathSync(fileURLToPath2(import.meta.url)) === fs14.realpathSync(argv1);
+    return fs17.realpathSync(fileURLToPath2(import.meta.url)) === fs17.realpathSync(argv1);
   } catch {
     return false;
   }

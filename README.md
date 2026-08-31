@@ -16,8 +16,10 @@ Portable, tool-agnostic AI coding harness generator. One source of truth,
 - [Commands](#commands)
 - [Harness Packages](#harness-packages)
 - [Skills](#skills)
+- [Plugins](#plugins)
 - [Memory](#memory)
 - [Agent skill directories](#agent-skill-directories)
+- [Agent plugin directories](#agent-plugin-directories)
 - [Installation](#installation)
 - [Try it (sandboxed demo)](#try-it-sandboxed-demo)
 - [Development](#development)
@@ -200,9 +202,11 @@ my-harness/
 │   ├── stack/            — per-technology structural patterns
 │   └── project/          — full project scaffolds
 ├── projects/             — per-repo overlays matched by repo name
-└── skills/               — skills to distribute (vendored or referenced)
-    ├── brainstorming/    — vendored skill (committed to package repo)
-    └── caveman/          — referenced skill (fetched on install)
+├── skills/               — skills to distribute (vendored or referenced)
+│   ├── brainstorming/    — vendored skill (committed to package repo)
+│   └── caveman/          — referenced skill (fetched on install)
+└── plugins/              — agent plugins to distribute (vendored or referenced)
+    └── ponytail/         — referenced plugin (fetched on install)
 ```
 
 ### Package commands
@@ -239,7 +243,8 @@ Installs artifacts from the active package onto the host machine.
 ```bash
 seh package install --harness              # write ~/.seh/AGENTS.md + agent symlinks
 seh package install --skills               # symlink skills into ~/.seh/skills/ + agent dirs
-seh package install --all                  # both of the above
+seh package install --plugins              # symlink plugins into ~/.seh/plugins/ + agent dirs
+seh package install --all                  # all of the above
 seh package install --all --agents claude,gemini  # non-interactive agent selection
 ```
 
@@ -247,8 +252,9 @@ seh package install --all --agents claude,gemini  # non-interactive agent select
 |------|--------|
 | `--harness` | Writes `~/.seh/AGENTS.md` from `package/global/AGENTS.md`; updates agent symlinks |
 | `--skills` | Fetches referenced skills, symlinks `package/skills/<name>/` → `~/.seh/skills/<name>/` → agent skill dirs |
-| `--all` | Both of the above |
-| `--agents <list>` | Comma-separated agents to receive skill symlinks (prompts interactively if omitted) |
+| `--plugins` | Fetches referenced plugins, symlinks `package/plugins/<name>/` → `~/.seh/plugins/<name>/` → the plugin dir of every agent the plugin supports |
+| `--all` | All of the above |
+| `--agents <list>` | Comma-separated agents to receive skill and plugin symlinks (prompts interactively if omitted) |
 | `--force` | Overwrite existing files |
 
 **New machine workflow:**
@@ -394,6 +400,100 @@ routing, the section is omitted entirely.
 
 ---
 
+## Plugins
+
+Agent plugins — the vendor-native runtime units (Claude Code plugins, Gemini CLI
+extensions, pi extensions, OpenCode plugins) — travel in the harness package the
+same way skills do. One `install` wires a plugin into every agent on the machine
+that it actually supports.
+
+```
+<package>/plugins/<name>/   ← source (vendored or referenced)
+         ↓ symlink
+~/.seh/plugins/<name>/      ← stable intermediate on this machine
+         ↓ symlinks (only where the plugin ships an adapter)
+~/.claude/skills/<name>/           ← Claude Code
+~/.gemini/extensions/<name>/       ← Gemini CLI
+~/.pi/agent/extensions/<name>/     ← pi
+~/.config/opencode/plugins/<name>.<ext>  ← OpenCode
+~/.agents/plugins/<name>/          ← cross-agent interoperability path
+```
+
+### Adapter detection
+
+seh never guesses per plugin. For each agent it checks that agent's **own**
+manifest convention inside the plugin directory, so any conforming plugin works:
+
+| Agent | Detected when the plugin has |
+|-------|------------------------------|
+| `claude` | `.claude-plugin/plugin.json` |
+| `gemini` | `gemini-extension.json` |
+| `pi` | `package.json` with a resolvable `pi.extensions` entry, or `index.ts` / `index.js` |
+| `opencode` | `package.json` `main` under `.opencode/`, or a single plugin file in `.opencode/plugin(s)/` |
+| `agents` | `.agents/plugins/marketplace.json` |
+
+An agent with no adapter is **skipped and reported** — seh never creates a
+symlink that the agent could not load:
+
+```console
+$ seh package install --plugins --agents claude,gemini,pi,opencode,codex
+seh: plugin 'ponytail' → claude, gemini, pi, opencode  (skipped: codex)
+seh: plugin 'security' → gemini  (skipped: claude, pi, opencode, codex)
+```
+
+### Plugin commands
+
+#### `seh plugins add <url> [--vendor | --reference] [--ref <branch>] [--path <agent>=<subpath>]`
+
+```bash
+seh plugins add https://github.com/DietrichGebert/ponytail --reference
+seh plugins add github:you/my-plugin --vendor --ref v1.2
+```
+
+- `--vendor`: clones files into `<package>/plugins/<name>/` (committed to git)
+- `--reference`: records the URL in `harness.json` only; appends
+  `plugins/<name>/` to `.gitignore`; files are fetched at install time
+- `--path <agent>=<subpath>`: overrides detection for one agent when a plugin
+  keeps its adapter somewhere unconventional (repeatable)
+- Prompts for type if neither flag is given
+
+#### `seh plugins update [name]`
+
+Re-fetches referenced plugins from source. Updates all of them when no name is
+given; refuses vendored plugins (their files live in the package).
+
+#### `seh plugins list`
+
+```console
+$ seh plugins list
+  ✓ ponytail  [reference]  agents: claude, gemini, pi, opencode, agents  https://github.com/DietrichGebert/ponytail (main)
+  ✓ security  [reference]  agents: gemini  https://github.com/gemini-cli-extensions/security (main)
+```
+
+### `harness.json` plugins metadata
+
+```json
+{
+  "plugins": {
+    "ponytail": {
+      "type": "reference",
+      "source": "https://github.com/DietrichGebert/ponytail",
+      "ref": "main"
+    },
+    "my-plugin": {
+      "type": "vendor",
+      "paths": { "pi": "pi-extension" }
+    }
+  }
+}
+```
+
+A plugin and a skill may not share a name: Claude Code loads plugins from its
+skills directory, so the two would overwrite each other. `seh package install`
+fails loudly instead.
+
+---
+
 ## Memory
 
 `.seh/memory/` stores typed markdown files that agents read for persistent
@@ -503,6 +603,23 @@ All supported agents have confirmed user-level skill directories (as of 2026-07)
 | `pi` | `~/.pi/agent/skills/<name>` |
 | `copilot` | `~/.copilot/skills/<name>` |
 | `agents` | `~/.agents/skills/<name>` |
+
+---
+
+## Agent plugin directories
+
+Where `seh package install --plugins` links plugins (verified 2026-08):
+
+| Agent | User plugin directory | Verified against |
+|-------|----------------------|------------------|
+| `claude` | `~/.claude/skills/<name>` | `claude plugin list` reports the link as `<name>@skills-dir`, status loaded |
+| `gemini` | `~/.gemini/extensions/<name>` | gemini-cli `docs/extensions/reference.md` |
+| `pi` | `~/.pi/agent/extensions/<name>` | pi extension loader resolves a symlinked dir via `package.json` `pi.extensions`, then `index.{ts,js}` |
+| `opencode` | `~/.config/opencode/plugins/<name>.<ext>` | opencode plugin docs |
+| `agents` | `~/.agents/plugins/<name>` | cross-agent interoperability path |
+
+`codex` and `copilot` are not wired: no drop-in plugin directory could be
+verified for either. Adding one is a single row in `src/plugin-adapters.ts`.
 
 ---
 

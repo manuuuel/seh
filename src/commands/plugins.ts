@@ -4,11 +4,20 @@ import type { PluginPaths } from '../types.js';
 import { addToGitignore, cloneAt, requireHarness, writeHarness } from '../units.js';
 import { detectAdapters } from '../plugin-adapters.js';
 
-/** Agents this plugin ships an adapter for, or [] when its files are not on disk. */
+/**
+ * Agents this plugin ships an adapter for; [] when its files are not on disk or
+ * its overrides are invalid. Listing is an inspection command: it reports the
+ * package as it is rather than refusing to run. `install` is where a bad
+ * override fails loudly.
+ */
 function coverage(packagePath: string, name: string, paths?: PluginPaths): string[] {
   const dir = packagePluginDir(packagePath, name);
   if (!fs.existsSync(dir)) return [];
-  return detectAdapters(dir, paths).map((a) => a.agent);
+  try {
+    return detectAdapters(dir, paths).map((a) => a.agent);
+  } catch {
+    return [];
+  }
 }
 
 export function runPluginsAdd(opts: {

@@ -139,6 +139,13 @@ describe('detectAdapters', () => {
     expect(() => detectAdapters(root, { pi: '/etc/passwd' })).toThrow('outside the plugin');
   });
 
+  it('rejects a windows-style override on every platform', () => {
+    const root = pluginRoot({ 'index.ts': '' });
+    expect(() => detectAdapters(root, { pi: '..\\..\\evil' })).toThrow('outside the plugin');
+    expect(() => detectAdapters(root, { pi: 'C:\\Windows' })).toThrow('outside the plugin');
+    expect(() => detectAdapters(root, { pi: '\\\\server\\share' })).toThrow('outside the plugin');
+  });
+
   it('ignores a pi.extensions entry pointing outside the plugin', () => {
     const root = pluginRoot({
       'package.json': JSON.stringify({ pi: { extensions: ['../../../etc/passwd'] } }),

@@ -208,6 +208,17 @@ describe('runPluginsList', () => {
     expect(runPluginsList({ packagePath: pkg }).plugins[0]?.agents).toEqual(['pi']);
   });
 
+  it('reports no agents instead of crashing on an invalid path override', () => {
+    const pkg = tmpPkg();
+    const repo = tmpPluginRepo({ 'index.ts': 'export default {}\n' });
+    runPluginsAdd({ url: `file://${repo}`, pluginName: 'demo', type: 'vendor', packagePath: pkg });
+    const hj = packageHarnessJson(pkg);
+    const h = JSON.parse(fs.readFileSync(hj, 'utf8'));
+    h.plugins.demo.paths = { pi: '../../etc' };
+    fs.writeFileSync(hj, JSON.stringify(h, null, 2) + '\n');
+    expect(runPluginsList({ packagePath: pkg }).plugins[0]?.agents).toEqual([]);
+  });
+
   it('includes a plugin present on disk but absent from harness.json', () => {
     const pkg = tmpPkg();
     fs.mkdirSync(packagePluginDir(pkg, 'orphan'), { recursive: true });

@@ -32,8 +32,8 @@
 - **`config.json`** — `~/.seh/config.json`, the authoritative set of agents the
   user wires (`agents`) plus an optional active package path (`packagePath`).
 - **Harness package** — a plain git directory (`harness.json`, `global/`,
-  `templates/`, `projects/`, `skills/`) that overrides L0/L1 content when
-  active. `seh` reads and scaffolds it; git is fully external.
+  `templates/`, `projects/`, `skills/`, `plugins/`) that overrides L0/L1 content
+  when active. `seh` reads and scaffolds it; git is fully external.
 - **Package resolution** — the precedence order for any file: package →
   `~/.seh/` → bundled core (L0). Handled by `PackageResolver`.
 - **Skill** — a reusable `SKILL.md`-based capability package, vendored
@@ -42,6 +42,16 @@
 - **Skill routing** — a skill's `invoke` mode (`always`/`when`/`optional`),
   recorded in `harness.json` and rendered into `AGENTS.md`'s `## Skills`
   section by `seh sync`.
+- **Plugin** — an agent-native runtime unit (Claude Code plugin, Gemini CLI
+  extension, pi extension, OpenCode plugin) distributed by the package,
+  vendored or referenced like a skill, and symlinked into each agent's plugin
+  directory.
+- **Adapter** — the part of a plugin that a specific agent loads, identified by
+  that agent's own manifest convention (e.g. `.claude-plugin/plugin.json`). A
+  plugin ships an adapter for some agents and not others.
+- **Adapter detection** — resolving which agents a plugin supports, and the
+  subpath each one loads, by probing those conventions (`plugin-adapters.ts`).
+  `harness.json` `paths` overrides it for unconventional layouts.
 - **Memory** — `.seh/memory/<name>.md`, typed markdown files (`decision`/
   `constraint`/`learning`/`problem`) giving agents persistent project context
   across sessions. Rendered into `AGENTS.md`'s `## Memory` section by `seh sync`.

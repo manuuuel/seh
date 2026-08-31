@@ -60,7 +60,7 @@ type PluginAdapter = {
 |---|---|---|---|
 | claude | `~/.claude/skills/` | `.claude-plugin/plugin.json` -> `.` | `claude plugin validate <dir>` resolves that path (executed) |
 | gemini | `~/.gemini/extensions/` | `gemini-extension.json` -> `.` | gemini-cli `docs/extensions/reference.md:107` |
-| pi | `~/.pi/agent/extensions/` | `package.json` `pi.extensions[0]`; else `extensions/` or `index.{ts,js}` -> `.` | pi `docs/packages.md` (manifest + convention dirs) |
+| pi | `~/.pi/agent/extensions/` | `package.json` with a resolvable `pi.extensions` entry, else `index.{ts,js}` -> `.` | pi `dist/core/extensions/loader.js` `resolveExtensionEntries` (read during build; it resolves a symlinked dir itself, so the adapter is the plugin root) |
 | opencode | `~/.config/opencode/plugins/` | `package.json.main` under `.opencode/`; else the single file in `.opencode/plugin(s)/` | opencode.ai/docs/plugins |
 | agents | `~/.agents/plugins/` | `.agents/plugins/marketplace.json` -> `.` | cross-agent interoperability path |
 
@@ -133,6 +133,15 @@ fails loudly with both names instead.
 - **Ecosystem drift** — plugin conventions change. Contained to one table with
   one row per agent, each row citing its source.
 - **Editing working skills code** — guarded by the unmodified-tests rule above.
-- **pi's `.js` discovery** — the docs table lists `*.ts` / `*/index.ts`. The pi
-  row links a directory, matching the documented `*/index.ts` shape; verify at
-  runtime before release.
+- **pi's `.js` discovery** — resolved during the build: pi's loader accepts
+  `.js` and resolves a symlinked directory through `package.json` `pi.extensions`
+  or `index.{ts,js}`. Recorded in `.seh/memory/agent-plugin-dirs-are-not-what-docs-say.md`.
+
+## Verification (2026-08-31)
+
+Against a throwaway `HOME`, with the real `DietrichGebert/ponytail` repo:
+`seh plugins add --reference` + `seh package install --plugins` linked claude,
+gemini, pi, opencode and agents, and reported `codex` skipped. `claude plugin
+list` reported `ponytail@skills-dir … Status: ✔ loaded`. A second, unrelated
+plugin (`gemini-cli-extensions/security`) wired into gemini only, proving the
+detection is not ponytail-shaped.

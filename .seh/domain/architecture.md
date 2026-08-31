@@ -42,9 +42,9 @@ Global rules apply everywhere; the project layer **extends, never contradicts** 
   `MemoryType`, `MemoryEntry`).
 - `commands/` — one file per verb: `initGlobal`, `initProject`, `sync`,
   `check`, `link`, `package` (`runPackageInit/Use/Status`), `install`
-  (`runPackageInstall`), `skills` (`runSkillsAdd/Update/List`), `memory`
-  (`runMemoryAdd/List/Remove`). These orchestrate the pure modules and do the
-  filesystem writes.
+  (`runPackageInstall`), `skills` (`runSkillsAdd/Update/List`), `plugins`
+  (`runPluginsAdd/Update/List`), `memory` (`runMemoryAdd/List/Remove`). These
+  orchestrate the pure modules and do the filesystem writes.
 - `cli.ts` — Commander wiring + interactive prompts; the only entrypoint.
 
 ## Data flow

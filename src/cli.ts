@@ -13,7 +13,9 @@ import { runCheck } from './commands/check.js';
 import { runLink } from './commands/link.js';
 import { runPackageInit, runPackageUse, runPackageStatus } from './commands/package.js';
 import { runSkillsAdd, runSkillsUpdate, runSkillsList } from './commands/skills.js';
+import * as pluginsCommands from './commands/plugins.js';
 import { runPackageInstall } from './commands/install.js';
+import { PLUGIN_AGENTS } from './plugin-adapters.js';
 import { runMemoryAdd, runMemoryList, runMemoryRemove } from './commands/memory.js';
 import { detectTechnologies } from './detect.js';
 import { SUPPORTED_TECHS } from './catalog.js';
@@ -31,7 +33,7 @@ function fail(err: unknown) {
 
 export function buildProgram(): Command {
   const program = new Command();
-  program.name('seh').description('Portable AI coding harness generator').version('0.4.1');
+  program.name('seh').description('Portable AI coding harness generator').version('0.5.0');
 
   const resolver = readResolver(os.homedir());
 
@@ -153,12 +155,29 @@ export function buildProgram(): Command {
       } catch (err) { fail(err); }
     });
 
-  function parseSkillUrl(raw: string): { url: string; skillName: string } {
+  function parseRepoUrl(raw: string): { url: string; name: string } {
     const ghShorthand = raw.match(/^github:([^/]+)\/([^/]+)$/);
-    if (ghShorthand) return { url: `https://github.com/${ghShorthand[1]}/${ghShorthand[2]}`, skillName: ghShorthand[2] };
+    if (ghShorthand) return { url: `https://github.com/${ghShorthand[1]}/${ghShorthand[2]}`, name: ghShorthand[2]! };
     const ghUrl = raw.match(/^https?:\/\/github\.com\/([^/]+)\/([^/]+?)(?:\.git)?\/?$/);
-    if (ghUrl) return { url: raw, skillName: ghUrl[2] };
+    if (ghUrl) return { url: raw, name: ghUrl[2]! };
     throw new Error(`Unsupported URL: ${raw}. Use https://github.com/owner/repo or github:owner/repo`);
+  }
+
+  /** `--path pi=pi-extension` (repeatable) overrides adapter detection for one agent. */
+  function collectPath(mapping: string, acc: Record<string, string>): Record<string, string> {
+    const eq = mapping.indexOf('=');
+    if (eq < 1) throw new Error(`Invalid --path '${mapping}'. Use --path <agent>=<subpath>.`);
+    const agent = mapping.slice(0, eq);
+    if (!PLUGIN_AGENTS.includes(agent)) {
+      throw new Error(`Unknown agent '${agent}' in --path. Known: ${PLUGIN_AGENTS.join(', ')}.`);
+    }
+    return { ...acc, [agent]: mapping.slice(eq + 1) };
+  }
+
+  function activePackagePath(): string {
+    const status = runPackageStatus({ home: os.homedir() });
+    if (!status.packagePath) throw new Error('No active package. Run `seh package use <path>` first.');
+    return status.packagePath;
   }
 
   const pkg = program.command('package').description('Manage harness packages');
@@ -205,19 +224,21 @@ export function buildProgram(): Command {
     .command('install')
     .description('Install harness and/or skills from the active package onto this machine')
     .option('--skills', 'install skills')
+    .option('--plugins', 'install plugins')
     .option('--harness', 'install global harness (AGENTS.md + agent symlinks)')
     .option('--all', 'install everything')
-    .option('--agents <list>', 'comma-separated agents to link skills into')
+    .option('--agents <list>', 'comma-separated agents to link skills and plugins into')
     .option('-f, --force', 'overwrite existing files')
-    .action(async (opts: { skills?: boolean; harness?: boolean; all?: boolean; agents?: string; force?: boolean }) => {
+    .action(async (opts: { skills?: boolean; plugins?: boolean; harness?: boolean; all?: boolean; agents?: string; force?: boolean }) => {
       try {
         let agents = parseList(opts.agents);
-        if ((opts.skills || opts.all) && agents.length === 0) {
+        const needsAgents = opts.skills || opts.plugins || opts.all;
+        if (needsAgents && agents.length === 0) {
           const configured = readGlobalConfig(os.homedir()).agents;
           const res = await prompts({
-            type: 'multiselect', name: 'agents', message: 'Install skills into which agents?',
+            type: 'multiselect', name: 'agents', message: 'Install into which agents?',
             choices: SUPPORTED_AGENTS
-              .filter((a) => a in SKILL_TARGETS)
+              .filter((a) => a in SKILL_TARGETS || PLUGIN_AGENTS.includes(a))
               .map((a) => ({ title: a, value: a, selected: configured.includes(a) })),
           });
           if (res.agents === undefined) { console.log('seh: cancelled.'); process.exitCode = 0; return; }
@@ -225,6 +246,7 @@ export function buildProgram(): Command {
         }
         const result = runPackageInstall({
           skills: opts.skills,
+          plugins: opts.plugins,
           harness: opts.harness,
           all: opts.all,
           agents,
@@ -233,6 +255,10 @@ export function buildProgram(): Command {
         });
         if (result.installedHarness) console.log('seh: harness installed');
         if (result.installedSkills.length > 0) console.log(`seh: skills installed [${result.installedSkills.join(', ')}]`);
+        for (const p of result.installedPlugins) {
+          const skipped = p.skipped.length > 0 ? `  (skipped: ${p.skipped.join(', ')})` : '';
+          console.log(`seh: plugin '${p.name}' → ${p.linked.join(', ') || 'no agent'}${skipped}`);
+        }
       } catch (err) { fail(err); }
     });
 
@@ -250,7 +276,7 @@ export function buildProgram(): Command {
     .option('--optional', 'skill available, agent decides when to use it')
     .action(async (url: string, opts: { vendor?: boolean; reference?: boolean; ref?: string; force?: boolean; always?: string | boolean; when?: string; optional?: boolean }) => {
       try {
-        const { url: resolvedUrl, skillName } = parseSkillUrl(url);
+        const { url: resolvedUrl, name: skillName } = parseRepoUrl(url);
 
         const routingFlagCount = [opts.always !== undefined, !!opts.when, !!opts.optional].filter(Boolean).length;
         if (routingFlagCount > 1) {
@@ -282,9 +308,7 @@ export function buildProgram(): Command {
           invoke = { mode: 'optional' };
         }
 
-        const status = runPackageStatus({ home: os.homedir() });
-        if (!status.packagePath) throw new Error('No active package. Run `seh package use <path>` first.');
-        runSkillsAdd({ url: resolvedUrl, skillName, type, ref: opts.ref, packagePath: status.packagePath, force: opts.force, invoke });
+        runSkillsAdd({ url: resolvedUrl, skillName, type, ref: opts.ref, packagePath: activePackagePath(), force: opts.force, invoke });
         console.log(`seh: skill '${skillName}' added (${type})`);
       } catch (err) { fail(err); }
     });
@@ -320,6 +344,68 @@ export function buildProgram(): Command {
             else if (s.invoke.mode === 'optional') invokeStr = `  optional`;
           }
           console.log(`  ${disk} ${s.name}  [${s.type}]${invokeStr}${src}`);
+        }
+      } catch (err) { fail(err); }
+    });
+
+  const plugins = program.command('plugins').description('Manage plugins in the active harness package');
+
+  plugins
+    .command('add <url>')
+    .description('Add an agent plugin from a GitHub URL to the active package')
+    .option('--vendor', 'copy plugin files into the package (committed to git)')
+    .option('--reference', 'track plugin as external reference (fetched on install)')
+    .option('--ref <branch>', 'branch or tag (default: main)')
+    .option('--path <agent=subpath>', 'override adapter detection for one agent (repeatable)', collectPath, {})
+    .option('-f, --force', 'overwrite existing plugin')
+    .action(async (url: string, opts: { vendor?: boolean; reference?: boolean; ref?: string; path?: Record<string, string>; force?: boolean }) => {
+      try {
+        const { url: resolvedUrl, name: pluginName } = parseRepoUrl(url);
+
+        let type: 'vendor' | 'reference' | undefined;
+        if (opts.vendor) type = 'vendor';
+        else if (opts.reference) type = 'reference';
+        else {
+          const res = await prompts({
+            type: 'select', name: 'type', message: 'How to add this plugin?',
+            choices: [
+              { title: 'Vendor (copy into package, commit to git)', value: 'vendor' },
+              { title: 'Reference (track externally, fetch on install)', value: 'reference' },
+            ],
+          });
+          if (res.type === undefined) { console.log('seh: cancelled.'); process.exitCode = 0; return; }
+          type = res.type as 'vendor' | 'reference';
+        }
+
+        pluginsCommands.runPluginsAdd({
+          url: resolvedUrl, pluginName, type, ref: opts.ref,
+          packagePath: activePackagePath(), force: opts.force, paths: opts.path,
+        });
+        console.log(`seh: plugin '${pluginName}' added (${type})`);
+      } catch (err) { fail(err); }
+    });
+
+  plugins
+    .command('update [name]')
+    .description('Re-fetch referenced plugin(s) from source')
+    .action((name: string | undefined) => {
+      try {
+        const { updated } = pluginsCommands.runPluginsUpdate({ pluginName: name, packagePath: activePackagePath() });
+        console.log(`seh: updated [${updated.join(', ') || 'none'}]`);
+      } catch (err) { fail(err); }
+    });
+
+  plugins
+    .command('list')
+    .description('List plugins in the active package with the agents they support')
+    .action(() => {
+      try {
+        const { plugins: list } = pluginsCommands.runPluginsList({ packagePath: activePackagePath() });
+        if (list.length === 0) { console.log('seh: no plugins'); return; }
+        for (const p of list) {
+          const src = p.source ? `  ${p.source} (${p.ref})` : '';
+          const agents = p.onDisk ? `  agents: ${p.agents.join(', ') || 'none'}` : '  (not fetched)';
+          console.log(`  ${p.onDisk ? '✓' : '✗'} ${p.name}  [${p.type}]${agents}${src}`);
         }
       } catch (err) { fail(err); }
     });

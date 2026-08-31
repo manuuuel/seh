@@ -14,6 +14,7 @@ import {
   packageTemplatesProjectDir,
   packageProjectsDir,
   packageSkillsDir,
+  packagePluginsDir,
 } from '../paths.js';
 import type { HarnessPackage } from '../types.js';
 import { readGlobalConfig } from '../links.js';
@@ -36,6 +37,7 @@ export function runPackageInit(opts: {
     packageTemplatesProjectDir(p),
     packageProjectsDir(p),
     packageSkillsDir(p),
+    packagePluginsDir(p),
   ]) {
     fs.mkdirSync(d, { recursive: true });
   }
@@ -124,6 +126,8 @@ export function runPackageStatus(opts: {
     'templates/stack/': fs.existsSync(packageTemplatesStackDir(packagePath)),
     'templates/project/': fs.existsSync(packageTemplatesProjectDir(packagePath)),
     'projects/': fs.existsSync(packageProjectsDir(packagePath)),
+    'skills/': fs.existsSync(packageSkillsDir(packagePath)),
+    'plugins/': fs.existsSync(packagePluginsDir(packagePath)),
   };
 
   return { packagePath, pkg, dirs };

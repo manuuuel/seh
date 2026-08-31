@@ -7,8 +7,56 @@ import { runInitGlobal } from './initGlobal.js';
 import {
   packageSkillsDir, packageSkillDir,
   packageGlobalConfigJson, sehSkillsDir, sehSkillDir,
+  packagePluginsDir, packagePluginDir, sehPluginsDir, sehPluginDir,
 } from '../paths.js';
 import { cloneAt, readHarness } from '../units.js';
+import { detectAdapters, linkNameFor } from '../plugin-adapters.js';
+import type { PluginPaths } from '../types.js';
+
+export type PluginInstall = { name: string; linked: string[]; skipped: string[] };
+
+function symlink(target: string, source: string): void {
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  if (fs.lstatSync(target, { throwIfNoEntry: false })) fs.rmSync(target, { recursive: true, force: true });
+  try {
+    fs.symlinkSync(path.relative(path.dirname(target), source), target);
+  } catch (err) {
+    throw new Error(`Cannot create symlink ${target}: ${err instanceof Error ? err.message : String(err)}`);
+  }
+}
+
+/**
+ * Fan one plugin out: package -> ~/.seh/plugins/<name> -> every selected agent
+ * that the plugin ships an adapter for.
+ */
+function installPlugin(opts: {
+  name: string;
+  packagePath: string;
+  home: string;
+  agents: string[];
+  paths?: PluginPaths;
+  force?: boolean;
+}): PluginInstall {
+  const source = packagePluginDir(opts.packagePath, opts.name);
+  const intermediate = sehPluginDir(opts.home, opts.name);
+
+  fs.mkdirSync(sehPluginsDir(opts.home), { recursive: true });
+  if (!fs.lstatSync(intermediate, { throwIfNoEntry: false }) || opts.force) {
+    symlink(intermediate, source);
+  }
+
+  const adapters = detectAdapters(source, opts.paths);
+  const linked: string[] = [];
+  for (const adapter of adapters) {
+    if (!opts.agents.includes(adapter.agent)) continue;
+    const linkName = linkNameFor(opts.name, adapter.subpath);
+    const target = path.join(adapter.targetDir(opts.home), linkName);
+    symlink(target, path.join(intermediate, adapter.subpath));
+    linked.push(adapter.agent);
+  }
+
+  return { name: opts.name, linked, skipped: opts.agents.filter((a) => !linked.includes(a)) };
+}
 
 function readPackageAgents(packagePath: string): string[] {
   const p = packageGlobalConfigJson(packagePath);
@@ -23,11 +71,12 @@ function readPackageAgents(packagePath: string): string[] {
 export function runPackageInstall(opts: {
   skills?: boolean;
   harness?: boolean;
+  plugins?: boolean;
   all?: boolean;
   agents?: string[];
   force?: boolean;
   home?: string;
-}): { installedSkills: string[]; installedHarness: boolean } {
+}): { installedSkills: string[]; installedHarness: boolean; installedPlugins: PluginInstall[] } {
   const home = opts.home ?? os.homedir();
   const cfg = readGlobalConfig(home);
   if (!cfg.packagePath) throw new Error('No active package. Run `seh package use <path>` first.');
@@ -35,7 +84,9 @@ export function runPackageInstall(opts: {
   const packagePath = cfg.packagePath;
   const doSkills = opts.skills || opts.all || false;
   const doHarness = opts.harness || opts.all || false;
+  const doPlugins = opts.plugins || opts.all || false;
   const installedSkills: string[] = [];
+  const installedPlugins: PluginInstall[] = [];
   let installedHarness = false;
 
   if (doHarness) {
@@ -55,7 +106,7 @@ export function runPackageInstall(opts: {
     }
 
     const skillsDir = packageSkillsDir(packagePath);
-    if (!fs.existsSync(skillsDir)) return { installedSkills, installedHarness };
+    if (!fs.existsSync(skillsDir)) return { installedSkills, installedHarness, installedPlugins };
 
     fs.mkdirSync(sehSkillsDir(home), { recursive: true });
     for (const entry of fs.readdirSync(skillsDir, { withFileTypes: true })) {
@@ -78,5 +129,41 @@ export function runPackageInstall(opts: {
     }
   }
 
-  return { installedSkills, installedHarness };
+  if (doPlugins) {
+    const harness = readHarness(packagePath);
+    const entries = Object.entries(harness?.plugins ?? {});
+
+    for (const [name] of entries) {
+      if (harness?.skills && name in harness.skills) {
+        throw new Error(
+          `'${name}' is declared as both a skill and a plugin. Claude loads plugins from its ` +
+          `skills directory, so the two would overwrite each other — rename one.`,
+        );
+      }
+    }
+
+    for (const [name, entry] of entries) {
+      if (entry.type !== 'reference') continue;
+      const dir = packagePluginDir(packagePath, name);
+      if (fs.existsSync(dir) && !opts.force) continue;
+      cloneAt(entry.source, entry.ref, dir);
+    }
+
+    const pluginsDir = packagePluginsDir(packagePath);
+    if (fs.existsSync(pluginsDir)) {
+      for (const dir of fs.readdirSync(pluginsDir, { withFileTypes: true })) {
+        if (!dir.isDirectory()) continue;
+        installedPlugins.push(installPlugin({
+          name: dir.name,
+          packagePath,
+          home,
+          agents: opts.agents ?? [],
+          paths: harness?.plugins?.[dir.name]?.paths,
+          force: opts.force,
+        }));
+      }
+    }
+  }
+
+  return { installedSkills, installedHarness, installedPlugins };
 }

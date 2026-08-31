@@ -136,6 +136,24 @@ describe('runPackageInstall --plugins', () => {
     expect(() => runPackageInstall({ plugins: true, agents: ['claude'], home })).toThrow('demo');
   });
 
+  it('refuses to replace a real directory at an agent target', () => {
+    const { home } = pkgWithPlugin('demo', CLAUDE_PLUGIN);
+    const native = path.join(targetDir('claude', home), 'demo');
+    fs.mkdirSync(native, { recursive: true });
+    fs.writeFileSync(path.join(native, 'keep.md'), 'installed by hand\n');
+    expect(() => runPackageInstall({ plugins: true, agents: ['claude'], home })).toThrow('--force');
+    expect(fs.existsSync(path.join(native, 'keep.md'))).toBe(true);
+  });
+
+  it('replaces a real directory at an agent target with --force', () => {
+    const { home } = pkgWithPlugin('demo', CLAUDE_PLUGIN);
+    const native = path.join(targetDir('claude', home), 'demo');
+    fs.mkdirSync(native, { recursive: true });
+    fs.writeFileSync(path.join(native, 'keep.md'), 'installed by hand\n');
+    runPackageInstall({ plugins: true, agents: ['claude'], force: true, home });
+    expect(fs.lstatSync(native).isSymbolicLink()).toBe(true);
+  });
+
   it('installs nothing when the package has no plugins', () => {
     const pkg = path.join(tmpDir(), 'my-harness');
     runPackageInit({ packagePath: pkg });

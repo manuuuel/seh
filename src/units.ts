@@ -5,9 +5,6 @@ import { execSync } from 'node:child_process';
 import { packageHarnessJson } from './paths.js';
 import type { HarnessPackage } from './types.js';
 
-/** A git-backed unit distributed by a harness package. */
-export type UnitKind = 'skills' | 'plugins';
-
 export function copyDir(src: string, dest: string): void {
   fs.mkdirSync(dest, { recursive: true });
   for (const entry of fs.readdirSync(src, { withFileTypes: true })) {

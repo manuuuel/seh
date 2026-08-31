@@ -492,6 +492,12 @@ A plugin and a skill may not share a name: Claude Code loads plugins from its
 skills directory, so the two would overwrite each other. `seh package install`
 fails loudly instead.
 
+A harness package travels between machines, so its declarations are treated as
+untrusted input. A `paths` override that is absolute or escapes the plugin
+directory is refused, and `seh` never replaces a file it did not create — a
+hand-installed plugin at an agent path stops the install until you move it aside
+or pass `--force`.
+
 ---
 
 ## Memory

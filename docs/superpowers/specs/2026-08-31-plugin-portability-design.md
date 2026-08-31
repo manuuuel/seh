@@ -114,6 +114,14 @@ the `copyDir` duplication that already exists between `commands/skills.ts` and
 `commands/install.ts`. The extraction is behavior-preserving: it lands in its own
 commit and no existing test may be modified.
 
+### Trust boundary
+
+`harness.json` and a plugin's own manifests are untrusted input: a package is
+cloned from a remote and shared across a team. Subpaths (adapter `paths`
+overrides, `pi.extensions` entries, opencode `main`) are rejected when absolute
+or escaping the plugin directory, and an existing non-symlink at an agent target
+is never silently replaced.
+
 ### Collision guard
 
 Claude loads plugins from its skills directory, so a package declaring a skill

@@ -28,10 +28,17 @@ function readJson(file: string): Record<string, unknown> | null {
   }
 }
 
-const normalize = (p: string): string => {
+/**
+ * A subpath is untrusted input: it comes from a plugin's own manifest or from
+ * harness.json, which travels between machines. Anything absolute or escaping
+ * the plugin directory is rejected rather than symlinked.
+ */
+function safeSubpath(p: string): string | null {
+  if (path.isAbsolute(p)) return null;
   const rel = path.normalize(p).replace(/^\.\//, '').replace(/\/+$/, '');
-  return rel === '' || rel === '.' ? '.' : rel;
-};
+  if (rel === '' || rel === '.') return '.';
+  return rel.split('/').includes('..') ? null : rel;
+}
 
 /**
  * pi resolves a symlinked extension directory itself: package.json "pi.extensions"
@@ -40,7 +47,12 @@ const normalize = (p: string): string => {
 function detectPi(root: string): string | null {
   const pkg = readJson(path.join(root, 'package.json'));
   const declared = (pkg?.['pi'] as { extensions?: unknown } | undefined)?.extensions;
-  if (Array.isArray(declared) && declared.some((e) => typeof e === 'string' && has(root, e))) return '.';
+  const resolvable = (e: unknown): boolean => {
+    if (typeof e !== 'string') return false;
+    const rel = safeSubpath(e);
+    return rel !== null && has(root, rel);
+  };
+  if (Array.isArray(declared) && declared.some(resolvable)) return '.';
   return has(root, 'index.ts') || has(root, 'index.js') ? '.' : null;
 }
 
@@ -51,8 +63,8 @@ const OPENCODE_EXTS = ['.ts', '.js', '.mjs'];
 function detectOpencode(root: string): string | null {
   const main = readJson(path.join(root, 'package.json'))?.['main'];
   if (typeof main === 'string') {
-    const rel = normalize(main);
-    if (rel.startsWith('.opencode/') && has(root, rel)) return rel;
+    const rel = safeSubpath(main);
+    if (rel !== null && rel.startsWith('.opencode/') && has(root, rel)) return rel;
   }
   for (const dir of OPENCODE_PLUGIN_DIRS) {
     if (!has(root, dir)) continue;
@@ -103,7 +115,18 @@ export function detectAdapters(
   const found: DetectedAdapter[] = [];
   for (const adapter of PLUGIN_ADAPTERS) {
     const override = overrides[adapter.agent];
-    const subpath = override !== undefined ? normalize(override) : adapter.detect(pluginRoot);
+    let subpath: string | null;
+    if (override !== undefined) {
+      subpath = safeSubpath(override);
+      if (subpath === null) {
+        throw new Error(
+          `Invalid path override '${override}' for agent '${adapter.agent}': ` +
+          `it points outside the plugin directory.`,
+        );
+      }
+    } else {
+      subpath = adapter.detect(pluginRoot);
+    }
     if (subpath === null) continue;
     found.push({ agent: adapter.agent, subpath, targetDir: adapter.targetDir });
   }

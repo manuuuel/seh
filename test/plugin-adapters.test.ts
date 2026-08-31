@@ -128,6 +128,31 @@ describe('detectAdapters', () => {
     expect(detectAdapters(root, { pi: 'other' }).find((a) => a.agent === 'pi')?.subpath).toBe('other');
   });
 
+  it('rejects an override escaping the plugin directory', () => {
+    const root = pluginRoot({ 'index.ts': '' });
+    expect(() => detectAdapters(root, { pi: '../../.bashrc' })).toThrow('outside the plugin');
+    expect(() => detectAdapters(root, { pi: 'nested/../../escape' })).toThrow('outside the plugin');
+  });
+
+  it('rejects an absolute override', () => {
+    const root = pluginRoot({ 'index.ts': '' });
+    expect(() => detectAdapters(root, { pi: '/etc/passwd' })).toThrow('outside the plugin');
+  });
+
+  it('ignores a pi.extensions entry pointing outside the plugin', () => {
+    const root = pluginRoot({
+      'package.json': JSON.stringify({ pi: { extensions: ['../../../etc/passwd'] } }),
+    });
+    expect(agentsOf(root)).not.toContain('pi');
+  });
+
+  it('ignores an opencode main pointing outside the plugin', () => {
+    const root = pluginRoot({
+      'package.json': JSON.stringify({ main: '../.opencode/plugins/evil.mjs' }),
+    });
+    expect(agentsOf(root)).not.toContain('opencode');
+  });
+
   it('ignores an override naming an unknown agent', () => {
     const root = pluginRoot({ 'gemini-extension.json': '{}' });
     expect(agentsOf(root, { nonsense: '.' })).toEqual(['gemini']);

@@ -154,6 +154,50 @@ describe('runPackageInstall --plugins', () => {
     expect(fs.lstatSync(native).isSymbolicLink()).toBe(true);
   });
 
+  it('does not link a module adapter whose npm dependencies are not installed', () => {
+    const { home } = pkgWithPlugin('pi-web-access', {
+      'package.json': JSON.stringify({ name: 'pi-web-access', pi: { extensions: ['./index.ts'] }, dependencies: { linkedom: '^0.16.0' } }),
+      'index.ts': 'import "linkedom";\n',
+    });
+    const { installedPlugins } = runPackageInstall({ plugins: true, agents: ['pi'], home });
+    expect(fs.existsSync(path.join(targetDir('pi', home), 'pi-web-access'))).toBe(false);
+    expect(installedPlugins[0]).toEqual({
+      name: 'pi-web-access',
+      linked: [],
+      skipped: ['pi'],
+      hostInstall: 'pi install npm:pi-web-access',
+    });
+  });
+
+  it('still links manifest adapters of a plugin that needs its host installer', () => {
+    const { home } = pkgWithPlugin('mixed', {
+      ...CLAUDE_PLUGIN,
+      'package.json': JSON.stringify({ name: 'mixed', pi: { extensions: ['./index.ts'] }, dependencies: { linkedom: '*' } }),
+      'index.ts': 'import "linkedom";\n',
+    });
+    const { installedPlugins } = runPackageInstall({ plugins: true, agents: ['claude', 'pi'], home });
+    expect(fs.existsSync(path.join(targetDir('claude', home), 'mixed'))).toBe(true);
+    expect(installedPlugins[0]?.linked).toEqual(['claude']);
+    expect(installedPlugins[0]?.hostInstall).toContain('pi install npm:mixed');
+  });
+
+  it('links the module adapter once its dependencies are installed', () => {
+    const { home, pkg } = pkgWithPlugin('pi-web-access', {
+      'package.json': JSON.stringify({ name: 'pi-web-access', pi: { extensions: ['./index.ts'] }, dependencies: { linkedom: '*' } }),
+      'index.ts': 'import "linkedom";\n',
+    });
+    fs.mkdirSync(path.join(packagePluginDir(pkg, 'pi-web-access'), 'node_modules', 'linkedom'), { recursive: true });
+    const { installedPlugins } = runPackageInstall({ plugins: true, agents: ['pi'], home });
+    expect(fs.existsSync(path.join(targetDir('pi', home), 'pi-web-access'))).toBe(true);
+    expect(installedPlugins[0]?.hostInstall).toBeUndefined();
+  });
+
+  it('omits hostInstall for a dependency-free plugin', () => {
+    const { home } = pkgWithPlugin('demo', CLAUDE_PLUGIN);
+    const { installedPlugins } = runPackageInstall({ plugins: true, agents: ['claude'], home });
+    expect(installedPlugins[0]?.hostInstall).toBeUndefined();
+  });
+
   it('installs nothing when the package has no plugins', () => {
     const pkg = path.join(tmpDir(), 'my-harness');
     runPackageInit({ packagePath: pkg });

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { PLUGIN_ADAPTERS, detectAdapters, linkNameFor } from '../src/plugin-adapters.js';
+import { PLUGIN_ADAPTERS, detectAdapters, linkNameFor, needsHostInstall } from '../src/plugin-adapters.js';
 
 function pluginRoot(files: Record<string, string>): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sehpa-'));
@@ -168,6 +168,55 @@ describe('detectAdapters', () => {
   it('every adapter exposes a target directory under the given home', () => {
     for (const adapter of PLUGIN_ADAPTERS) {
       expect(adapter.targetDir('/home/u')).toMatch(/^\/home\/u\//);
+    }
+  });
+});
+
+describe('needsHostInstall', () => {
+  it('is null for a plugin with no npm dependencies', () => {
+    expect(needsHostInstall(pluginRoot({ 'index.ts': '' }))).toBeNull();
+    expect(needsHostInstall(pluginRoot({
+      'package.json': JSON.stringify({ name: 'x', dependencies: {} }),
+    }))).toBeNull();
+  });
+
+  it('is null when only peer dependencies are declared, since the host provides those', () => {
+    const root = pluginRoot({
+      'package.json': JSON.stringify({ name: 'x', peerDependencies: { 'pi-tui': '*' } }),
+    });
+    expect(needsHostInstall(root)).toBeNull();
+  });
+
+  it('reports the package name and dependency count when dependencies are uninstalled', () => {
+    const root = pluginRoot({
+      'package.json': JSON.stringify({ name: 'pi-web-access', dependencies: { linkedom: '^0.16.0', turndown: '^7.2.0' } }),
+    });
+    expect(needsHostInstall(root)).toEqual({ spec: 'pi-web-access', deps: 2 });
+  });
+
+  it('is null once node_modules is present', () => {
+    const root = pluginRoot({
+      'package.json': JSON.stringify({ name: 'x', dependencies: { linkedom: '*' } }),
+      'node_modules/linkedom/index.js': '',
+    });
+    expect(needsHostInstall(root)).toBeNull();
+  });
+
+  it('falls back to the directory name when the package declares no name', () => {
+    const root = pluginRoot({ 'package.json': JSON.stringify({ dependencies: { a: '*' } }) });
+    expect(needsHostInstall(root)?.spec).toBe(path.basename(root));
+  });
+});
+
+describe('adapter metadata', () => {
+  it('marks the adapters whose entrypoint is a module', () => {
+    const loads = PLUGIN_ADAPTERS.filter((a) => a.loadsModule).map((a) => a.agent).sort();
+    expect(loads).toEqual(['opencode', 'pi']);
+  });
+
+  it('gives every module-loading adapter a host install command', () => {
+    for (const adapter of PLUGIN_ADAPTERS.filter((a) => a.loadsModule)) {
+      expect(adapter.hostInstall?.('pi-web-access')).toContain('pi-web-access');
     }
   });
 });

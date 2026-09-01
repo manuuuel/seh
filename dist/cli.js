@@ -8744,12 +8744,16 @@ var PLUGIN_ADAPTERS = [
   {
     agent: "pi",
     targetDir: (home2) => path10.join(home2, ".pi", "agent", "extensions"),
-    detect: detectPi
+    detect: detectPi,
+    loadsModule: true,
+    hostInstall: (spec) => `pi install npm:${spec}`
   },
   {
     agent: "opencode",
     targetDir: (home2) => path10.join(home2, ".config", "opencode", "plugins"),
-    detect: detectOpencode
+    detect: detectOpencode,
+    loadsModule: true,
+    hostInstall: (spec) => `add "${spec}" to the "plugin" array in ~/.config/opencode/opencode.json`
   },
   {
     agent: "agents",
@@ -8774,9 +8778,19 @@ function detectAdapters(pluginRoot, overrides = {}) {
       subpath = adapter.detect(pluginRoot);
     }
     if (subpath === null) continue;
-    found.push({ agent: adapter.agent, subpath, targetDir: adapter.targetDir });
+    found.push({ ...adapter, subpath });
   }
   return found;
+}
+function needsHostInstall(pluginRoot) {
+  const pkg = readJson(path10.join(pluginRoot, "package.json"));
+  if (!pkg) return null;
+  const deps = pkg["dependencies"];
+  const count = deps && typeof deps === "object" ? Object.keys(deps).length : 0;
+  if (count === 0) return null;
+  if (fs12.existsSync(path10.join(pluginRoot, "node_modules"))) return null;
+  const name = typeof pkg["name"] === "string" && pkg["name"] ? pkg["name"] : path10.basename(pluginRoot);
+  return { spec: name, deps: count };
 }
 function linkNameFor(pluginName, subpath) {
   const ext = subpath === "." ? "" : path10.extname(subpath);
@@ -8978,15 +8992,27 @@ function installPlugin(opts) {
     symlink(intermediate, source, opts.force);
   }
   const adapters = detectAdapters(source, opts.paths);
+  const pending = needsHostInstall(source);
   const linked = [];
+  const commands = [];
   for (const adapter of adapters) {
     if (!opts.agents.includes(adapter.agent)) continue;
+    if (pending && adapter.loadsModule) {
+      const command = adapter.hostInstall?.(pending.spec);
+      if (command) commands.push(command);
+      continue;
+    }
     const linkName = linkNameFor(opts.name, adapter.subpath);
     const target = path12.join(adapter.targetDir(opts.home), linkName);
     symlink(target, path12.join(intermediate, adapter.subpath), opts.force);
     linked.push(adapter.agent);
   }
-  return { name: opts.name, linked, skipped: opts.agents.filter((a) => !linked.includes(a)) };
+  return {
+    name: opts.name,
+    linked,
+    skipped: opts.agents.filter((a) => !linked.includes(a)),
+    ...commands.length > 0 ? { hostInstall: commands.join("; ") } : {}
+  };
 }
 function readPackageAgents(packagePath) {
   const p = packageGlobalConfigJson(packagePath);
@@ -9314,6 +9340,9 @@ function buildProgram() {
       for (const p of result.installedPlugins) {
         const skipped = p.skipped.length > 0 ? `  (skipped: ${p.skipped.join(", ")})` : "";
         console.log(`seh: plugin '${p.name}' \u2192 ${p.linked.join(", ") || "no agent"}${skipped}`);
+        if (p.hostInstall) {
+          console.log(`  needs its host installer for the npm dependencies:  ${p.hostInstall}`);
+        }
       }
     } catch (err) {
       fail(err);

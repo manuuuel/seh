@@ -435,6 +435,31 @@ manifest convention inside the plugin directory, so any conforming plugin works:
 An agent with no adapter is **skipped and reported** — seh never creates a
 symlink that the agent could not load:
 
+### Plugins with npm dependencies
+
+A symlink shares files, not `node_modules/`. So a plugin whose `package.json`
+declares runtime `dependencies` cannot be wired into an agent that loads it as a
+module (pi, OpenCode) — the first `import` would fail on every session. seh
+detects this and hands you the host's own installer, which resolves dependencies
+*and* the peer dependencies the agent provides itself:
+
+```console
+$ seh package install --plugins --agents claude,pi
+seh: plugin 'pi-web-access' → no agent  (skipped: claude, pi)
+  needs its host installer for the npm dependencies:  pi install npm:pi-web-access
+seh: plugin 'ponytail' → claude, pi
+```
+
+Manifest-based adapters of the same plugin (a Claude `plugin.json`, a Gemini
+extension manifest) are still linked — only the module entrypoints are held back.
+Once the dependencies exist (the plugin vendors `node_modules/`, or you install
+them yourself), the module adapter links like any other.
+
+seh deliberately does not run `npm install` for you: npm ≥7 also installs
+`peerDependencies`, which for a pi package means pulling duplicate copies of pi's
+own runtime — exactly what pi's packaging rules forbid. Dependency resolution
+stays with the tool that owns it.
+
 ```console
 $ seh package install --plugins --agents claude,gemini,pi,opencode,codex
 seh: plugin 'ponytail' → claude, gemini, pi, opencode  (skipped: codex)

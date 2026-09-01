@@ -48,6 +48,8 @@ function installPlugin(opts: {
   home: string;
   agents: string[];
   paths?: PluginPaths;
+  /** How the host should install this plugin: its reference URL, else `npm:<name>`. */
+  spec?: string;
   force?: boolean;
 }): PluginInstall {
   const source = packagePluginDir(opts.packagePath, opts.name);
@@ -59,31 +61,34 @@ function installPlugin(opts: {
   }
 
   const adapters = detectAdapters(source, opts.paths);
-  const pending = needsHostInstall(source);
-  const linked: string[] = [];
-  const commands: string[] = [];
+  const selected = adapters.filter((a) => opts.agents.includes(a.agent));
+  const entrypoints = selected.flatMap((a) => a.entrypoints?.(source) ?? []);
+  const pending = needsHostInstall(source, entrypoints);
 
+  // A plugin whose code needs uninstalled npm dependencies would fail on its
+  // first import, breaking every session of that agent. Hand it to the host's
+  // own installer, which also resolves the peers the agent provides itself.
+  if (pending) {
+    const spec = opts.spec ?? `npm:${pending.spec}`;
+    const commands = selected.filter((a) => a.hostInstall).map((a) => a.hostInstall!(spec));
+    return {
+      name: opts.name,
+      linked: [],
+      skipped: opts.agents,
+      hostInstall: commands.length > 0 ? commands.join('; ') : `install ${spec} with its host`,
+    };
+  }
+
+  const linked: string[] = [];
   for (const adapter of adapters) {
     if (!opts.agents.includes(adapter.agent)) continue;
-    // A module entrypoint whose dependencies are absent would fail on first
-    // import, breaking every session of that agent. Report it instead.
-    if (pending && adapter.loadsModule) {
-      const command = adapter.hostInstall?.(pending.spec);
-      if (command) commands.push(command);
-      continue;
-    }
     const linkName = linkNameFor(opts.name, adapter.subpath);
     const target = path.join(adapter.targetDir(opts.home), linkName);
     symlink(target, path.join(intermediate, adapter.subpath), opts.force);
     linked.push(adapter.agent);
   }
 
-  return {
-    name: opts.name,
-    linked,
-    skipped: opts.agents.filter((a) => !linked.includes(a)),
-    ...(commands.length > 0 ? { hostInstall: commands.join('; ') } : {}),
-  };
+  return { name: opts.name, linked, skipped: opts.agents.filter((a) => !linked.includes(a)) };
 }
 
 function readPackageAgents(packagePath: string): string[] {
@@ -182,12 +187,14 @@ export function runPackageInstall(opts: {
     if (fs.existsSync(pluginsDir)) {
       for (const dir of fs.readdirSync(pluginsDir, { withFileTypes: true })) {
         if (!dir.isDirectory()) continue;
+        const entry = harness?.plugins?.[dir.name];
         installedPlugins.push(installPlugin({
           name: dir.name,
           packagePath,
           home,
           agents: opts.agents ?? [],
-          paths: harness?.plugins?.[dir.name]?.paths,
+          paths: entry?.paths,
+          spec: entry?.type === 'reference' ? entry.source : undefined,
           force: opts.force,
         }));
       }

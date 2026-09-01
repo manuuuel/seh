@@ -172,52 +172,110 @@ describe('detectAdapters', () => {
   });
 });
 
+// The entrypoints are the files an agent actually loads; only their governing
+// package.json files matter. Anything else in the repo is not that agent's
+// business — ponytail bundles an MCP server with its own dependencies which pi
+// never loads.
 describe('needsHostInstall', () => {
-  it('is null for a plugin with no npm dependencies', () => {
-    expect(needsHostInstall(pluginRoot({ 'index.ts': '' }))).toBeNull();
-    expect(needsHostInstall(pluginRoot({
+  it('is null when the agent loads no module at all', () => {
+    const root = pluginRoot({ 'package.json': JSON.stringify({ dependencies: { linkedom: '*' } }) });
+    expect(needsHostInstall(root, [])).toBeNull();
+  });
+
+  it('is null for an entrypoint whose package declares no dependencies', () => {
+    const root = pluginRoot({
       'package.json': JSON.stringify({ name: 'x', dependencies: {} }),
-    }))).toBeNull();
+      'index.ts': '',
+    });
+    expect(needsHostInstall(root, ['index.ts'])).toBeNull();
   });
 
   it('is null when only peer dependencies are declared, since the host provides those', () => {
     const root = pluginRoot({
       'package.json': JSON.stringify({ name: 'x', peerDependencies: { 'pi-tui': '*' } }),
+      'index.ts': '',
     });
-    expect(needsHostInstall(root)).toBeNull();
+    expect(needsHostInstall(root, ['index.ts'])).toBeNull();
   });
 
-  it('reports the package name and dependency count when dependencies are uninstalled', () => {
+  it('reports the package name and dependency count for uninstalled dependencies', () => {
     const root = pluginRoot({
       'package.json': JSON.stringify({ name: 'pi-web-access', dependencies: { linkedom: '^0.16.0', turndown: '^7.2.0' } }),
+      'index.ts': '',
     });
-    expect(needsHostInstall(root)).toEqual({ spec: 'pi-web-access', deps: 2 });
+    expect(needsHostInstall(root, ['index.ts'])).toEqual({ spec: 'pi-web-access', deps: 2 });
+  });
+
+  it('finds dependencies of the workspace package owning the entrypoint', () => {
+    const root = pluginRoot({
+      'package.json': JSON.stringify({ name: 'pi-extensions', workspaces: ['packages/*'] }),
+      'packages/a/package.json': JSON.stringify({ name: 'a', dependencies: { 'proper-lockfile': '*' } }),
+      'packages/a/src/index.ts': '',
+    });
+    expect(needsHostInstall(root, ['packages/a/src/index.ts'])).toEqual({ spec: 'pi-extensions', deps: 1 });
+  });
+
+  it('ignores a sibling component the agent never loads', () => {
+    const root = pluginRoot({
+      'package.json': JSON.stringify({ name: 'ponytail' }),
+      'pi-extension/package.json': JSON.stringify({ name: 'x', private: true }),
+      'pi-extension/index.js': '',
+      'ponytail-mcp/package.json': JSON.stringify({ dependencies: { '@modelcontextprotocol/sdk': '*', zod: '*' } }),
+    });
+    expect(needsHostInstall(root, ['pi-extension/index.js'])).toBeNull();
+  });
+
+  it('counts the root package when dependencies sit above the entrypoint', () => {
+    const root = pluginRoot({
+      'package.json': JSON.stringify({ name: 'hoisted', dependencies: { linkedom: '*' } }),
+      'src/index.ts': '',
+    });
+    expect(needsHostInstall(root, ['src/index.ts'])?.deps).toBe(1);
   });
 
   it('is null once node_modules is present', () => {
     const root = pluginRoot({
       'package.json': JSON.stringify({ name: 'x', dependencies: { linkedom: '*' } }),
+      'index.ts': '',
       'node_modules/linkedom/index.js': '',
     });
-    expect(needsHostInstall(root)).toBeNull();
+    expect(needsHostInstall(root, ['index.ts'])).toBeNull();
   });
 
   it('falls back to the directory name when the package declares no name', () => {
-    const root = pluginRoot({ 'package.json': JSON.stringify({ dependencies: { a: '*' } }) });
-    expect(needsHostInstall(root)?.spec).toBe(path.basename(root));
+    const root = pluginRoot({
+      'package.json': JSON.stringify({ dependencies: { a: '*' } }),
+      'index.ts': '',
+    });
+    expect(needsHostInstall(root, ['index.ts'])?.spec).toBe(path.basename(root));
+  });
+});
+
+describe('entrypoints', () => {
+  const piAdapter = () => PLUGIN_ADAPTERS.find((a) => a.agent === 'pi')!;
+
+  it('are the resolvable pi.extensions entries', () => {
+    const root = pluginRoot({
+      'package.json': JSON.stringify({ pi: { extensions: ['./a/index.js', './missing.js'] } }),
+      'a/index.js': '',
+    });
+    expect(piAdapter().entrypoints!(root)).toEqual(['a/index.js']);
+  });
+
+  it('fall back to the root index when no manifest declares them', () => {
+    expect(piAdapter().entrypoints!(pluginRoot({ 'index.ts': '' }))).toEqual(['index.ts']);
   });
 });
 
 describe('adapter metadata', () => {
-  it('marks the adapters whose entrypoint is a module', () => {
-    const loads = PLUGIN_ADAPTERS.filter((a) => a.loadsModule).map((a) => a.agent).sort();
-    expect(loads).toEqual(['opencode', 'pi']);
+  it('gives a host install command to exactly the agents that load a module', () => {
+    const withCommand = PLUGIN_ADAPTERS.filter((a) => a.hostInstall).map((a) => a.agent).sort();
+    expect(withCommand).toEqual(['opencode', 'pi']);
   });
 
-  it('gives every module-loading adapter a host install command', () => {
-    for (const adapter of PLUGIN_ADAPTERS.filter((a) => a.loadsModule)) {
-      expect(adapter.hostInstall?.('pi-web-access')).toContain('pi-web-access');
-    }
+  it('builds the command from the given spec', () => {
+    const pi = PLUGIN_ADAPTERS.find((a) => a.agent === 'pi')!;
+    expect(pi.hostInstall!('npm:pi-web-access')).toBe('pi install npm:pi-web-access');
   });
 });
 

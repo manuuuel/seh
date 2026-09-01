@@ -11,12 +11,12 @@ export type PluginAdapter = {
   targetDir: (home: string) => string;
   detect: (pluginRoot: string) => string | null;
   /**
-   * True when the adapter this agent loads is a module entrypoint, so the
-   * plugin's npm dependencies must already be installed for it to import.
-   * Manifest-based adapters (a plugin.json, an extension manifest) do not.
+   * Files this agent loads as modules, relative to the plugin root. Only these
+   * need npm dependencies installed — an unrelated component in the same repo
+   * (a bundled MCP server, say) is none of this agent's business.
    */
-  loadsModule?: boolean;
-  /** The host's own install command for a package spec, shown when deps are missing. */
+  entrypoints?: (pluginRoot: string) => string[];
+  /** The host's own install command for a spec, used when dependencies are missing. */
   hostInstall?: (spec: string) => string;
 };
 
@@ -52,17 +52,23 @@ function safeSubpath(p: string): string | null {
  * pi resolves a symlinked extension directory itself: package.json "pi.extensions"
  * first, then index.ts / index.js (dist/core/extensions/loader.js).
  */
-function detectPi(root: string): string | null {
+function piEntrypoints(root: string): string[] {
   const pkg = readJson(path.join(root, 'package.json'));
   const declared = (pkg?.['pi'] as { extensions?: unknown } | undefined)?.extensions;
-  const resolvable = (e: unknown): boolean => {
-    if (typeof e !== 'string') return false;
-    const rel = safeSubpath(e);
-    return rel !== null && has(root, rel);
-  };
-  if (Array.isArray(declared) && declared.some(resolvable)) return '.';
-  return has(root, 'index.ts') || has(root, 'index.js') ? '.' : null;
+  if (Array.isArray(declared)) {
+    const resolved = declared
+      .filter((e): e is string => typeof e === 'string')
+      .map((e) => safeSubpath(e))
+      .filter((rel): rel is string => rel !== null && has(root, rel));
+    if (resolved.length > 0) return resolved;
+  }
+  for (const index of ['index.ts', 'index.js']) {
+    if (has(root, index)) return [index];
+  }
+  return [];
 }
+
+const detectPi = (root: string): string | null => (piEntrypoints(root).length > 0 ? '.' : null);
 
 const OPENCODE_PLUGIN_DIRS = ['.opencode/plugin', '.opencode/plugins'];
 const OPENCODE_EXTS = ['.ts', '.js', '.mjs'];
@@ -100,14 +106,17 @@ export const PLUGIN_ADAPTERS: PluginAdapter[] = [
     agent: 'pi',
     targetDir: (home) => path.join(home, '.pi', 'agent', 'extensions'),
     detect: detectPi,
-    loadsModule: true,
-    hostInstall: (spec) => `pi install npm:${spec}`,
+    entrypoints: piEntrypoints,
+    hostInstall: (spec) => `pi install ${spec}`,
   },
   {
     agent: 'opencode',
     targetDir: (home) => path.join(home, '.config', 'opencode', 'plugins'),
     detect: detectOpencode,
-    loadsModule: true,
+    entrypoints: (root) => {
+      const sub = detectOpencode(root);
+      return sub === null ? [] : [sub];
+    },
     hostInstall: (spec) => `add "${spec}" to the "plugin" array in ~/.config/opencode/opencode.json`,
   },
   {
@@ -146,20 +155,54 @@ export function detectAdapters(
 }
 
 /**
- * Non-null when a plugin declares npm dependencies that are not installed.
- * A symlink cannot satisfy them — the host's own installer must, since it also
- * resolves the peer dependencies the agent provides itself. Only `dependencies`
- * count: peers come from the host, dev deps are irrelevant at runtime.
+ * Every `package.json` governing an entrypoint: its own directory and each
+ * ancestor up to the plugin root. A workspace monorepo declares its
+ * dependencies in the inner one, a flat package in the root one.
  */
-export function needsHostInstall(pluginRoot: string): { spec: string; deps: number } | null {
+function manifestsGoverning(root: string, entrypoint: string): string[] {
+  const manifests: string[] = [];
+  let dir = path.dirname(path.join(root, entrypoint));
+  const stop = path.resolve(root);
+  for (;;) {
+    const manifest = path.join(dir, 'package.json');
+    if (fs.existsSync(manifest)) manifests.push(manifest);
+    if (path.resolve(dir) === stop) break;
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return manifests;
+}
+
+/**
+ * Non-null when the code an agent would load needs npm dependencies that are
+ * not installed. A symlink shares files, not `node_modules`, so the plugin
+ * would fail on its first import. Only `dependencies` count: peers come from
+ * the host, and dev dependencies never load at runtime.
+ */
+export function needsHostInstall(
+  pluginRoot: string,
+  entrypoints: string[],
+): { spec: string; deps: number } | null {
+  if (entrypoints.length === 0) return null;
   const pkg = readJson(path.join(pluginRoot, 'package.json'));
   if (!pkg) return null;
-  const deps = pkg['dependencies'];
-  const count = deps && typeof deps === 'object' ? Object.keys(deps).length : 0;
-  if (count === 0) return null;
   if (fs.existsSync(path.join(pluginRoot, 'node_modules'))) return null;
+
+  const seen = new Set<string>();
+  let deps = 0;
+  for (const entrypoint of entrypoints) {
+    for (const manifest of manifestsGoverning(pluginRoot, entrypoint)) {
+      if (seen.has(manifest)) continue;
+      seen.add(manifest);
+      const declared = readJson(manifest)?.['dependencies'];
+      if (declared && typeof declared === 'object') deps += Object.keys(declared).length;
+    }
+  }
+  if (deps === 0) return null;
+
   const name = typeof pkg['name'] === 'string' && pkg['name'] ? pkg['name'] : path.basename(pluginRoot);
-  return { spec: name, deps: count };
+  return { spec: name, deps };
 }
 
 /** Link name in the agent's plugin dir: the plugin name, keeping a file subpath's extension. */

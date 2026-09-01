@@ -437,23 +437,34 @@ symlink that the agent could not load:
 
 ### Plugins with npm dependencies
 
-A symlink shares files, not `node_modules/`. So a plugin whose `package.json`
-declares runtime `dependencies` cannot be wired into an agent that loads it as a
-module (pi, OpenCode) — the first `import` would fail on every session. seh
-detects this and hands you the host's own installer, which resolves dependencies
-*and* the peer dependencies the agent provides itself:
+A symlink shares files, not `node_modules/`. A plugin that is *text* — rules,
+commands, hooks, manifests — travels perfectly. A plugin that is a *program*
+needs its libraries downloaded first, or its first `import` fails on every
+session of that agent.
+
+seh checks the files the agent will actually load (pi's `pi.extensions` entries
+or root `index.{ts,js}`, OpenCode's plugin file) and the `package.json` files
+governing them. If those declare uninstalled `dependencies`, the plugin is held
+back and the host's own command is printed instead:
 
 ```console
-$ seh package install --plugins --agents claude,pi
-seh: plugin 'pi-web-access' → no agent  (skipped: claude, pi)
-  needs its host installer for the npm dependencies:  pi install npm:pi-web-access
-seh: plugin 'ponytail' → claude, pi
+$ seh package install --plugins --agents claude,gemini,pi,opencode,agents
+seh: plugin 'pi-extensions' → no agent  (skipped: claude, gemini, pi, opencode, agents)
+  needs its host installer for the npm dependencies:  pi install https://github.com/narumiruna/pi-extensions
+seh: plugin 'ponytail' → claude, gemini, pi, opencode, agents
 ```
 
-Manifest-based adapters of the same plugin (a Claude `plugin.json`, a Gemini
-extension manifest) are still linked — only the module entrypoints are held back.
-Once the dependencies exist (the plugin vendors `node_modules/`, or you install
-them yourself), the module adapter links like any other.
+The check follows the entrypoints, not the whole repository, so it is accurate
+for both shapes seen in the wild:
+
+- a **workspace monorepo** declares nothing at its root and its dependencies one
+  level down, in the package owning the entrypoint — held back;
+- a plugin that **bundles an unrelated component** with its own dependencies (an
+  MCP server beside a dependency-free pi extension) is unaffected — the agent
+  never loads that component.
+
+The hold clears by itself once `node_modules/` exists, so a plugin that vendors
+its dependencies links like any other.
 
 seh deliberately does not run `npm install` for you: npm ≥7 also installs
 `peerDependencies`, which for a pi package means pulling duplicate copies of pi's

@@ -169,16 +169,45 @@ describe('runPackageInstall --plugins', () => {
     });
   });
 
-  it('still links manifest adapters of a plugin that needs its host installer', () => {
+  it('links nothing for a plugin that needs its host installer', () => {
     const { home } = pkgWithPlugin('mixed', {
       ...CLAUDE_PLUGIN,
       'package.json': JSON.stringify({ name: 'mixed', pi: { extensions: ['./index.ts'] }, dependencies: { linkedom: '*' } }),
       'index.ts': 'import "linkedom";\n',
     });
     const { installedPlugins } = runPackageInstall({ plugins: true, agents: ['claude', 'pi'], home });
-    expect(fs.existsSync(path.join(targetDir('claude', home), 'mixed'))).toBe(true);
-    expect(installedPlugins[0]?.linked).toEqual(['claude']);
+    expect(fs.existsSync(path.join(targetDir('claude', home), 'mixed'))).toBe(false);
+    expect(installedPlugins[0]?.linked).toEqual([]);
     expect(installedPlugins[0]?.hostInstall).toContain('pi install npm:mixed');
+  });
+
+  it('holds back a workspace monorepo whose packages declare dependencies', () => {
+    const { home } = pkgWithPlugin('pi-extensions', {
+      'package.json': JSON.stringify({ name: 'pi-extensions', workspaces: ['packages/*'], pi: { extensions: ['./packages/a/src/index.ts'] } }),
+      'packages/a/package.json': JSON.stringify({ name: 'a', dependencies: { 'proper-lockfile': '*' } }),
+      'packages/a/src/index.ts': 'import "proper-lockfile";\n',
+    });
+    const { installedPlugins } = runPackageInstall({ plugins: true, agents: ['pi'], home });
+    expect(fs.existsSync(path.join(targetDir('pi', home), 'pi-extensions'))).toBe(false);
+    expect(installedPlugins[0]?.hostInstall).toContain('pi install');
+  });
+
+  it('names the reference source in the host command, since it may not be on npm', () => {
+    const pkg = path.join(tmpDir(), 'my-harness');
+    runPackageInit({ packagePath: pkg });
+    const dir = packagePluginDir(pkg, 'pi-extensions');
+    fs.mkdirSync(path.join(dir, 'packages', 'a'), { recursive: true });
+    fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name: 'pi-extensions', pi: { extensions: ['./packages/a/index.ts'] } }));
+    fs.writeFileSync(path.join(dir, 'packages', 'a', 'package.json'), JSON.stringify({ dependencies: { x: '*' } }));
+    fs.writeFileSync(path.join(dir, 'packages', 'a', 'index.ts'), '');
+    patchHarness(pkg, (h) => {
+      h.plugins = { 'pi-extensions': { type: 'reference', source: 'https://github.com/narumiruna/pi-extensions', ref: 'main' } };
+    });
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'sehhome-'));
+    runPackageUse({ packagePath: pkg, home });
+    const { installedPlugins } = runPackageInstall({ plugins: true, agents: ['pi'], home });
+    expect(installedPlugins[0]?.hostInstall)
+      .toBe('pi install https://github.com/narumiruna/pi-extensions');
   });
 
   it('links the module adapter once its dependencies are installed', () => {

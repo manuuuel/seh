@@ -8704,17 +8704,19 @@ function safeSubpath(p) {
   if (rel === "" || rel === ".") return ".";
   return rel.split("/").includes("..") ? null : rel;
 }
-function detectPi(root) {
+function piEntrypoints(root) {
   const pkg = readJson(path10.join(root, "package.json"));
   const declared = pkg?.["pi"]?.extensions;
-  const resolvable = (e) => {
-    if (typeof e !== "string") return false;
-    const rel = safeSubpath(e);
-    return rel !== null && has(root, rel);
-  };
-  if (Array.isArray(declared) && declared.some(resolvable)) return ".";
-  return has(root, "index.ts") || has(root, "index.js") ? "." : null;
+  if (Array.isArray(declared)) {
+    const resolved = declared.filter((e) => typeof e === "string").map((e) => safeSubpath(e)).filter((rel) => rel !== null && has(root, rel));
+    if (resolved.length > 0) return resolved;
+  }
+  for (const index of ["index.ts", "index.js"]) {
+    if (has(root, index)) return [index];
+  }
+  return [];
 }
+var detectPi = (root) => piEntrypoints(root).length > 0 ? "." : null;
 var OPENCODE_PLUGIN_DIRS = [".opencode/plugin", ".opencode/plugins"];
 var OPENCODE_EXTS = [".ts", ".js", ".mjs"];
 function detectOpencode(root) {
@@ -8745,14 +8747,17 @@ var PLUGIN_ADAPTERS = [
     agent: "pi",
     targetDir: (home2) => path10.join(home2, ".pi", "agent", "extensions"),
     detect: detectPi,
-    loadsModule: true,
-    hostInstall: (spec) => `pi install npm:${spec}`
+    entrypoints: piEntrypoints,
+    hostInstall: (spec) => `pi install ${spec}`
   },
   {
     agent: "opencode",
     targetDir: (home2) => path10.join(home2, ".config", "opencode", "plugins"),
     detect: detectOpencode,
-    loadsModule: true,
+    entrypoints: (root) => {
+      const sub = detectOpencode(root);
+      return sub === null ? [] : [sub];
+    },
     hostInstall: (spec) => `add "${spec}" to the "plugin" array in ~/.config/opencode/opencode.json`
   },
   {
@@ -8782,15 +8787,38 @@ function detectAdapters(pluginRoot, overrides = {}) {
   }
   return found;
 }
-function needsHostInstall(pluginRoot) {
+function manifestsGoverning(root, entrypoint) {
+  const manifests = [];
+  let dir = path10.dirname(path10.join(root, entrypoint));
+  const stop = path10.resolve(root);
+  for (; ; ) {
+    const manifest = path10.join(dir, "package.json");
+    if (fs12.existsSync(manifest)) manifests.push(manifest);
+    if (path10.resolve(dir) === stop) break;
+    const parent = path10.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return manifests;
+}
+function needsHostInstall(pluginRoot, entrypoints) {
+  if (entrypoints.length === 0) return null;
   const pkg = readJson(path10.join(pluginRoot, "package.json"));
   if (!pkg) return null;
-  const deps = pkg["dependencies"];
-  const count = deps && typeof deps === "object" ? Object.keys(deps).length : 0;
-  if (count === 0) return null;
   if (fs12.existsSync(path10.join(pluginRoot, "node_modules"))) return null;
+  const seen = /* @__PURE__ */ new Set();
+  let deps = 0;
+  for (const entrypoint of entrypoints) {
+    for (const manifest of manifestsGoverning(pluginRoot, entrypoint)) {
+      if (seen.has(manifest)) continue;
+      seen.add(manifest);
+      const declared = readJson(manifest)?.["dependencies"];
+      if (declared && typeof declared === "object") deps += Object.keys(declared).length;
+    }
+  }
+  if (deps === 0) return null;
   const name = typeof pkg["name"] === "string" && pkg["name"] ? pkg["name"] : path10.basename(pluginRoot);
-  return { spec: name, deps: count };
+  return { spec: name, deps };
 }
 function linkNameFor(pluginName, subpath) {
   const ext = subpath === "." ? "" : path10.extname(subpath);
@@ -8992,27 +9020,28 @@ function installPlugin(opts) {
     symlink(intermediate, source, opts.force);
   }
   const adapters = detectAdapters(source, opts.paths);
-  const pending = needsHostInstall(source);
+  const selected = adapters.filter((a) => opts.agents.includes(a.agent));
+  const entrypoints = selected.flatMap((a) => a.entrypoints?.(source) ?? []);
+  const pending = needsHostInstall(source, entrypoints);
+  if (pending) {
+    const spec = opts.spec ?? `npm:${pending.spec}`;
+    const commands = selected.filter((a) => a.hostInstall).map((a) => a.hostInstall(spec));
+    return {
+      name: opts.name,
+      linked: [],
+      skipped: opts.agents,
+      hostInstall: commands.length > 0 ? commands.join("; ") : `install ${spec} with its host`
+    };
+  }
   const linked = [];
-  const commands = [];
   for (const adapter of adapters) {
     if (!opts.agents.includes(adapter.agent)) continue;
-    if (pending && adapter.loadsModule) {
-      const command = adapter.hostInstall?.(pending.spec);
-      if (command) commands.push(command);
-      continue;
-    }
     const linkName = linkNameFor(opts.name, adapter.subpath);
     const target = path12.join(adapter.targetDir(opts.home), linkName);
     symlink(target, path12.join(intermediate, adapter.subpath), opts.force);
     linked.push(adapter.agent);
   }
-  return {
-    name: opts.name,
-    linked,
-    skipped: opts.agents.filter((a) => !linked.includes(a)),
-    ...commands.length > 0 ? { hostInstall: commands.join("; ") } : {}
-  };
+  return { name: opts.name, linked, skipped: opts.agents.filter((a) => !linked.includes(a)) };
 }
 function readPackageAgents(packagePath) {
   const p = packageGlobalConfigJson(packagePath);
@@ -9090,12 +9119,14 @@ function runPackageInstall(opts) {
     if (fs15.existsSync(pluginsDir)) {
       for (const dir of fs15.readdirSync(pluginsDir, { withFileTypes: true })) {
         if (!dir.isDirectory()) continue;
+        const entry = harness?.plugins?.[dir.name];
         installedPlugins.push(installPlugin({
           name: dir.name,
           packagePath,
           home: home2,
           agents: opts.agents ?? [],
-          paths: harness?.plugins?.[dir.name]?.paths,
+          paths: entry?.paths,
+          spec: entry?.type === "reference" ? entry.source : void 0,
           force: opts.force
         }));
       }

@@ -258,6 +258,9 @@ export function buildProgram(): Command {
         for (const p of result.installedPlugins) {
           const skipped = p.skipped.length > 0 ? `  (skipped: ${p.skipped.join(', ')})` : '';
           console.log(`seh: plugin '${p.name}' → ${p.linked.join(', ') || 'no agent'}${skipped}`);
+          if (p.hostInstall) {
+            console.log(`  needs its host installer for the npm dependencies:  ${p.hostInstall}`);
+          }
         }
       } catch (err) { fail(err); }
     });

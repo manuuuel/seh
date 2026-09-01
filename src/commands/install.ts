@@ -10,10 +10,16 @@ import {
   packagePluginsDir, packagePluginDir, sehPluginsDir, sehPluginDir,
 } from '../paths.js';
 import { cloneAt, readHarness } from '../units.js';
-import { detectAdapters, linkNameFor } from '../plugin-adapters.js';
+import { detectAdapters, linkNameFor, needsHostInstall } from '../plugin-adapters.js';
 import type { PluginPaths } from '../types.js';
 
-export type PluginInstall = { name: string; linked: string[]; skipped: string[] };
+export type PluginInstall = {
+  name: string;
+  linked: string[];
+  skipped: string[];
+  /** Set when the plugin's npm dependencies must be installed by the host itself. */
+  hostInstall?: string;
+};
 
 function symlink(target: string, source: string, force?: boolean): void {
   fs.mkdirSync(path.dirname(target), { recursive: true });
@@ -53,16 +59,31 @@ function installPlugin(opts: {
   }
 
   const adapters = detectAdapters(source, opts.paths);
+  const pending = needsHostInstall(source);
   const linked: string[] = [];
+  const commands: string[] = [];
+
   for (const adapter of adapters) {
     if (!opts.agents.includes(adapter.agent)) continue;
+    // A module entrypoint whose dependencies are absent would fail on first
+    // import, breaking every session of that agent. Report it instead.
+    if (pending && adapter.loadsModule) {
+      const command = adapter.hostInstall?.(pending.spec);
+      if (command) commands.push(command);
+      continue;
+    }
     const linkName = linkNameFor(opts.name, adapter.subpath);
     const target = path.join(adapter.targetDir(opts.home), linkName);
     symlink(target, path.join(intermediate, adapter.subpath), opts.force);
     linked.push(adapter.agent);
   }
 
-  return { name: opts.name, linked, skipped: opts.agents.filter((a) => !linked.includes(a)) };
+  return {
+    name: opts.name,
+    linked,
+    skipped: opts.agents.filter((a) => !linked.includes(a)),
+    ...(commands.length > 0 ? { hostInstall: commands.join('; ') } : {}),
+  };
 }
 
 function readPackageAgents(packagePath: string): string[] {

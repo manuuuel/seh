@@ -10,13 +10,18 @@ export type PluginAdapter = {
   agent: string;
   targetDir: (home: string) => string;
   detect: (pluginRoot: string) => string | null;
+  /**
+   * True when the adapter this agent loads is a module entrypoint, so the
+   * plugin's npm dependencies must already be installed for it to import.
+   * Manifest-based adapters (a plugin.json, an extension manifest) do not.
+   */
+  loadsModule?: boolean;
+  /** The host's own install command for a package spec, shown when deps are missing. */
+  hostInstall?: (spec: string) => string;
 };
 
-export type DetectedAdapter = {
-  agent: string;
-  subpath: string;
-  targetDir: (home: string) => string;
-};
+/** An adapter this plugin ships, carrying the full row plus where it lives. */
+export type DetectedAdapter = PluginAdapter & { subpath: string };
 
 const has = (...parts: string[]): boolean => fs.existsSync(path.join(...parts));
 
@@ -95,11 +100,15 @@ export const PLUGIN_ADAPTERS: PluginAdapter[] = [
     agent: 'pi',
     targetDir: (home) => path.join(home, '.pi', 'agent', 'extensions'),
     detect: detectPi,
+    loadsModule: true,
+    hostInstall: (spec) => `pi install npm:${spec}`,
   },
   {
     agent: 'opencode',
     targetDir: (home) => path.join(home, '.config', 'opencode', 'plugins'),
     detect: detectOpencode,
+    loadsModule: true,
+    hostInstall: (spec) => `add "${spec}" to the "plugin" array in ~/.config/opencode/opencode.json`,
   },
   {
     agent: 'agents',
@@ -131,9 +140,26 @@ export function detectAdapters(
       subpath = adapter.detect(pluginRoot);
     }
     if (subpath === null) continue;
-    found.push({ agent: adapter.agent, subpath, targetDir: adapter.targetDir });
+    found.push({ ...adapter, subpath });
   }
   return found;
+}
+
+/**
+ * Non-null when a plugin declares npm dependencies that are not installed.
+ * A symlink cannot satisfy them — the host's own installer must, since it also
+ * resolves the peer dependencies the agent provides itself. Only `dependencies`
+ * count: peers come from the host, dev deps are irrelevant at runtime.
+ */
+export function needsHostInstall(pluginRoot: string): { spec: string; deps: number } | null {
+  const pkg = readJson(path.join(pluginRoot, 'package.json'));
+  if (!pkg) return null;
+  const deps = pkg['dependencies'];
+  const count = deps && typeof deps === 'object' ? Object.keys(deps).length : 0;
+  if (count === 0) return null;
+  if (fs.existsSync(path.join(pluginRoot, 'node_modules'))) return null;
+  const name = typeof pkg['name'] === 'string' && pkg['name'] ? pkg['name'] : path.basename(pluginRoot);
+  return { spec: name, deps: count };
 }
 
 /** Link name in the agent's plugin dir: the plugin name, keeping a file subpath's extension. */

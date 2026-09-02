@@ -10,7 +10,8 @@ import {
   packagePluginsDir, packagePluginDir, sehPluginsDir, sehPluginDir,
 } from '../paths.js';
 import { cloneAt, readHarness } from '../units.js';
-import { detectAdapters, linkNameFor, needsHostInstall } from '../plugin-adapters.js';
+import { detectAdapters, linkNameFor, pendingDependencies } from '../plugin-adapters.js';
+import { vendoredInstallCommand } from './plugins.js';
 import type { PluginPaths } from '../types.js';
 
 export type PluginInstall = {
@@ -48,7 +49,7 @@ function installPlugin(opts: {
   home: string;
   agents: string[];
   paths?: PluginPaths;
-  /** How the host should install this plugin: its reference URL, else `npm:<name>`. */
+  /** The reference URL this plugin came from, when it has one. */
   spec?: string;
   force?: boolean;
 }): PluginInstall {
@@ -60,25 +61,27 @@ function installPlugin(opts: {
     symlink(intermediate, source, opts.force);
   }
 
-  const adapters = detectAdapters(source, opts.paths);
-  const selected = adapters.filter((a) => opts.agents.includes(a.agent));
-  const entrypoints = selected.flatMap((a) => a.entrypoints?.(source) ?? []);
-  const pending = needsHostInstall(source, entrypoints);
+  const pending = pendingDependencies(source, opts.paths);
 
   // A plugin whose code needs uninstalled npm dependencies would fail on its
-  // first import, breaking every session of that agent. Hand it to the host's
-  // own installer, which also resolves the peers the agent provides itself.
-  if (pending) {
-    const spec = opts.spec ?? `npm:${pending.spec}`;
-    const commands = selected.filter((a) => a.hostInstall).map((a) => a.hostInstall!(spec));
+  // first import, breaking every session of that agent. Say how to install them:
+  // a referenced plugin goes through its host's installer, a vendored one keeps
+  // its source here, so its dependencies are installed in place.
+  if (pending && pending.adapters.some((a) => opts.agents.includes(a.agent))) {
     return {
       name: opts.name,
       linked: [],
       skipped: opts.agents,
-      hostInstall: commands.length > 0 ? commands.join('; ') : `install ${spec} with its host`,
+      hostInstall: opts.spec
+        ? pending.adapters
+            .filter((a) => opts.agents.includes(a.agent) && a.hostInstall)
+            .map((a) => a.hostInstall!(opts.spec!))
+            .join('; ')
+        : vendoredInstallCommand(source),
     };
   }
 
+  const adapters = detectAdapters(source, opts.paths);
   const linked: string[] = [];
   for (const adapter of adapters) {
     if (!opts.agents.includes(adapter.agent)) continue;

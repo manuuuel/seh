@@ -8623,7 +8623,7 @@ function writeHarness(packagePath, harness) {
 function addToGitignore(packagePath, entry) {
   const gi = path9.join(packagePath, ".gitignore");
   const existing = fs10.existsSync(gi) ? fs10.readFileSync(gi, "utf8") : "";
-  if (existing.includes(entry)) return;
+  if (existing.split("\n").some((line) => line.trim() === entry)) return;
   const sep = existing.length > 0 && !existing.endsWith("\n") ? "\n" : "";
   fs10.writeFileSync(gi, existing + sep + entry + "\n");
 }
@@ -8820,6 +8820,12 @@ function needsHostInstall(pluginRoot, entrypoints) {
   const name = typeof pkg["name"] === "string" && pkg["name"] ? pkg["name"] : path10.basename(pluginRoot);
   return { spec: name, deps };
 }
+function pendingDependencies(pluginRoot, paths) {
+  const adapters = detectAdapters(pluginRoot, paths).filter((a) => a.entrypoints);
+  const entrypoints = adapters.flatMap((a) => a.entrypoints(pluginRoot));
+  const pending = needsHostInstall(pluginRoot, entrypoints);
+  return pending ? { ...pending, adapters } : null;
+}
 function linkNameFor(pluginName, subpath) {
   const ext = subpath === "." ? "" : path10.extname(subpath);
   return `${pluginName}${ext}`;
@@ -8846,6 +8852,7 @@ function runPluginsAdd(opts) {
   if (opts.type === "vendor") {
     cloneAt(opts.url, opts.ref ?? "main", pluginDir);
     harness.plugins[opts.pluginName] = { type: "vendor", ...paths };
+    addToGitignore(opts.packagePath, `plugins/${opts.pluginName}/node_modules/`);
   } else {
     harness.plugins[opts.pluginName] = {
       type: "reference",
@@ -8856,6 +8863,11 @@ function runPluginsAdd(opts) {
     addToGitignore(opts.packagePath, `plugins/${opts.pluginName}/`);
   }
   writeHarness(opts.packagePath, harness);
+  const pending = opts.type === "vendor" ? pendingDependencies(pluginDir, opts.paths) : null;
+  return pending ? { pendingDeps: { deps: pending.deps, command: vendoredInstallCommand(pluginDir) } } : {};
+}
+function vendoredInstallCommand(pluginDir) {
+  return `cd ${pluginDir} && npm install --omit=dev`;
 }
 function runPluginsUpdate(opts) {
   const harness = requireHarness(opts.packagePath);
@@ -9019,20 +9031,16 @@ function installPlugin(opts) {
   if (!fs15.lstatSync(intermediate, { throwIfNoEntry: false }) || opts.force) {
     symlink(intermediate, source, opts.force);
   }
-  const adapters = detectAdapters(source, opts.paths);
-  const selected = adapters.filter((a) => opts.agents.includes(a.agent));
-  const entrypoints = selected.flatMap((a) => a.entrypoints?.(source) ?? []);
-  const pending = needsHostInstall(source, entrypoints);
-  if (pending) {
-    const spec = opts.spec ?? `npm:${pending.spec}`;
-    const commands = selected.filter((a) => a.hostInstall).map((a) => a.hostInstall(spec));
+  const pending = pendingDependencies(source, opts.paths);
+  if (pending && pending.adapters.some((a) => opts.agents.includes(a.agent))) {
     return {
       name: opts.name,
       linked: [],
       skipped: opts.agents,
-      hostInstall: commands.length > 0 ? commands.join("; ") : `install ${spec} with its host`
+      hostInstall: opts.spec ? pending.adapters.filter((a) => opts.agents.includes(a.agent) && a.hostInstall).map((a) => a.hostInstall(opts.spec)).join("; ") : vendoredInstallCommand(source)
     };
   }
+  const adapters = detectAdapters(source, opts.paths);
   const linked = [];
   for (const adapter of adapters) {
     if (!opts.agents.includes(adapter.agent)) continue;
@@ -9483,7 +9491,7 @@ function buildProgram() {
         }
         type = res.type;
       }
-      runPluginsAdd({
+      const { pendingDeps } = runPluginsAdd({
         url: resolvedUrl,
         pluginName,
         type,
@@ -9493,6 +9501,10 @@ function buildProgram() {
         paths: opts.path
       });
       console.log(`seh: plugin '${pluginName}' added (${type})`);
+      if (pendingDeps) {
+        console.log(`  its code needs ${pendingDeps.deps} npm dependencies, which a symlink cannot provide:`);
+        console.log(`  ${pendingDeps.command}`);
+      }
     } catch (err) {
       fail(err);
     }

@@ -155,7 +155,7 @@ describe('runPackageInstall --plugins', () => {
   });
 
   it('does not link a module adapter whose npm dependencies are not installed', () => {
-    const { home } = pkgWithPlugin('pi-web-access', {
+    const { home, pkg } = pkgWithPlugin('pi-web-access', {
       'package.json': JSON.stringify({ name: 'pi-web-access', pi: { extensions: ['./index.ts'] }, dependencies: { linkedom: '^0.16.0' } }),
       'index.ts': 'import "linkedom";\n',
     });
@@ -165,7 +165,7 @@ describe('runPackageInstall --plugins', () => {
       name: 'pi-web-access',
       linked: [],
       skipped: ['pi'],
-      hostInstall: 'pi install npm:pi-web-access',
+      hostInstall: `cd ${packagePluginDir(pkg, 'pi-web-access')} && npm install --omit=dev`,
     });
   });
 
@@ -178,7 +178,7 @@ describe('runPackageInstall --plugins', () => {
     const { installedPlugins } = runPackageInstall({ plugins: true, agents: ['claude', 'pi'], home });
     expect(fs.existsSync(path.join(targetDir('claude', home), 'mixed'))).toBe(false);
     expect(installedPlugins[0]?.linked).toEqual([]);
-    expect(installedPlugins[0]?.hostInstall).toContain('pi install npm:mixed');
+    expect(installedPlugins[0]?.hostInstall).toContain('npm install --omit=dev');
   });
 
   it('holds back a workspace monorepo whose packages declare dependencies', () => {
@@ -189,7 +189,7 @@ describe('runPackageInstall --plugins', () => {
     });
     const { installedPlugins } = runPackageInstall({ plugins: true, agents: ['pi'], home });
     expect(fs.existsSync(path.join(targetDir('pi', home), 'pi-extensions'))).toBe(false);
-    expect(installedPlugins[0]?.hostInstall).toContain('pi install');
+    expect(installedPlugins[0]?.hostInstall).toContain('npm install --omit=dev');
   });
 
   it('names the reference source in the host command, since it may not be on npm', () => {

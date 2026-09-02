@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import { packagePluginDir, packagePluginsDir } from '../paths.js';
 import type { PluginPaths } from '../types.js';
 import { addToGitignore, cloneAt, requireHarness, writeHarness } from '../units.js';
-import { detectAdapters } from '../plugin-adapters.js';
+import { detectAdapters, pendingDependencies } from '../plugin-adapters.js';
 
 /**
  * Agents this plugin ships an adapter for; [] when its files are not on disk or
@@ -28,7 +28,7 @@ export function runPluginsAdd(opts: {
   packagePath: string;
   force?: boolean;
   paths?: PluginPaths;
-}): void {
+}): { pendingDeps?: { deps: number; command: string } } {
   const pluginDir = packagePluginDir(opts.packagePath, opts.pluginName);
 
   if (fs.existsSync(pluginDir) && !opts.force) {
@@ -42,6 +42,9 @@ export function runPluginsAdd(opts: {
   if (opts.type === 'vendor') {
     cloneAt(opts.url, opts.ref ?? 'main', pluginDir);
     harness.plugins[opts.pluginName] = { type: 'vendor', ...paths };
+    // A vendored plugin's dependencies are installed in place, so keep the
+    // resulting node_modules out of the package repository.
+    addToGitignore(opts.packagePath, `plugins/${opts.pluginName}/node_modules/`);
   } else {
     harness.plugins[opts.pluginName] = {
       type: 'reference',
@@ -53,6 +56,21 @@ export function runPluginsAdd(opts: {
   }
 
   writeHarness(opts.packagePath, harness);
+
+  // Only a vendored plugin is on disk now; a reference is fetched at install.
+  const pending = opts.type === 'vendor' ? pendingDependencies(pluginDir, opts.paths) : null;
+  return pending
+    ? { pendingDeps: { deps: pending.deps, command: vendoredInstallCommand(pluginDir) } }
+    : {};
+}
+
+/**
+ * A vendored plugin keeps its source in the package, so its dependencies are
+ * installed in place. `pi install <path>` would only record a path reference
+ * without installing them.
+ */
+export function vendoredInstallCommand(pluginDir: string): string {
+  return `cd ${pluginDir} && npm install --omit=dev`;
 }
 
 export function runPluginsUpdate(opts: {

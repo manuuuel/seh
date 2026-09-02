@@ -466,10 +466,32 @@ for both shapes seen in the wild:
 The hold clears by itself once `node_modules/` exists, so a plugin that vendors
 its dependencies links like any other.
 
-seh deliberately does not run `npm install` for you: npm ≥7 also installs
-`peerDependencies`, which for a pi package means pulling duplicate copies of pi's
-own runtime — exactly what pi's packaging rules forbid. Dependency resolution
-stays with the tool that owns it.
+**The instruction depends on how the plugin arrived:**
+
+| added with | instruction | why |
+|---|---|---|
+| `--reference` | `pi install <source URL>` | the host clones it and installs dependencies into its own directory |
+| `--vendor` | `cd <package>/plugins/<name> && npm install --omit=dev` | the source already lives in your harness, so its dependencies are installed in place |
+
+`seh plugins add --vendor` says this immediately, rather than letting you commit
+a plugin that turns out not to load:
+
+```console
+$ seh plugins add https://github.com/nicobailon/pi-web-access --vendor
+seh: plugin 'pi-web-access' added (vendor)
+  its code needs 9 npm dependencies, which a symlink cannot provide:
+  cd ~/my-harness/plugins/pi-web-access && npm install --omit=dev
+```
+
+Vendoring also appends `plugins/<name>/node_modules/` to the package
+`.gitignore` — installing those dependencies pulls hundreds of megabytes,
+including the agent's own runtime, which must never be committed.
+
+seh deliberately does not run `npm install` itself. npm ≥7 installs
+`peerDependencies` too, and for a pi package those are pi's own runtime
+(`@earendil-works/pi-ai`, `pi-coding-agent`, `pi-tui`) — measured at 373 MB
+duplicated inside one plugin, which pi's packaging rules explicitly forbid.
+Running it is your decision, not a side effect of `seh package install`.
 
 ```console
 $ seh package install --plugins --agents claude,gemini,pi,opencode,codex

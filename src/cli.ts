@@ -380,11 +380,15 @@ export function buildProgram(): Command {
           type = res.type as 'vendor' | 'reference';
         }
 
-        pluginsCommands.runPluginsAdd({
+        const { pendingDeps } = pluginsCommands.runPluginsAdd({
           url: resolvedUrl, pluginName, type, ref: opts.ref,
           packagePath: activePackagePath(), force: opts.force, paths: opts.path,
         });
         console.log(`seh: plugin '${pluginName}' added (${type})`);
+        if (pendingDeps) {
+          console.log(`  its code needs ${pendingDeps.deps} npm dependencies, which a symlink cannot provide:`);
+          console.log(`  ${pendingDeps.command}`);
+        }
       } catch (err) { fail(err); }
     });
 

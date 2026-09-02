@@ -71,7 +71,7 @@ describe('seh plugins commands (CLI)', () => {
 
   it('seh plugins add --vendor vendors the plugin under its repo name', async () => {
     const status = vi.spyOn(packageModule, 'runPackageStatus').mockReturnValue(fakeStatus as any);
-    const add = vi.spyOn(pluginsModule, 'runPluginsAdd').mockImplementation(() => {});
+    const add = vi.spyOn(pluginsModule, "runPluginsAdd").mockImplementation(() => ({}));
     try {
       await buildProgram().parseAsync(['node', 'seh', 'plugins', 'add', 'github:DietrichGebert/ponytail', '--vendor']);
       expect(add).toHaveBeenCalledWith(expect.objectContaining({
@@ -88,7 +88,7 @@ describe('seh plugins commands (CLI)', () => {
 
   it('seh plugins add --reference records the given ref', async () => {
     const status = vi.spyOn(packageModule, 'runPackageStatus').mockReturnValue(fakeStatus as any);
-    const add = vi.spyOn(pluginsModule, 'runPluginsAdd').mockImplementation(() => {});
+    const add = vi.spyOn(pluginsModule, "runPluginsAdd").mockImplementation(() => ({}));
     try {
       await buildProgram().parseAsync([
         'node', 'seh', 'plugins', 'add', 'github:owner/thing', '--reference', '--ref', 'v2',
@@ -102,7 +102,7 @@ describe('seh plugins commands (CLI)', () => {
 
   it('seh plugins add --path passes an adapter override', async () => {
     const status = vi.spyOn(packageModule, 'runPackageStatus').mockReturnValue(fakeStatus as any);
-    const add = vi.spyOn(pluginsModule, 'runPluginsAdd').mockImplementation(() => {});
+    const add = vi.spyOn(pluginsModule, "runPluginsAdd").mockImplementation(() => ({}));
     try {
       await buildProgram().parseAsync([
         'node', 'seh', 'plugins', 'add', 'github:owner/thing', '--vendor', '--path', 'pi=pi-extension',

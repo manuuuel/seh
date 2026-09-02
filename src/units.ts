@@ -47,7 +47,8 @@ export function writeHarness(packagePath: string, harness: HarnessPackage): void
 export function addToGitignore(packagePath: string, entry: string): void {
   const gi = path.join(packagePath, '.gitignore');
   const existing = fs.existsSync(gi) ? fs.readFileSync(gi, 'utf8') : '';
-  if (existing.includes(entry)) return;
+  // Compare whole lines: `plugins/x/node_modules/` must not stand in for `plugins/x/`.
+  if (existing.split('\n').some((line) => line.trim() === entry)) return;
   const sep = existing.length > 0 && !existing.endsWith('\n') ? '\n' : '';
   fs.writeFileSync(gi, existing + sep + entry + '\n');
 }

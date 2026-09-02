@@ -62,10 +62,44 @@ describe('runPluginsAdd --vendor', () => {
     const pkg = tmpPkg();
     const repo = tmpPluginRepo(claudePlugin);
     runPluginsAdd({ url: `file://${repo}`, pluginName: 'demo', type: 'vendor', packagePath: pkg });
-    const gi = fs.existsSync(path.join(pkg, '.gitignore'))
-      ? fs.readFileSync(path.join(pkg, '.gitignore'), 'utf8')
-      : '';
-    expect(gi).not.toContain('plugins/demo/');
+    const lines = fs.existsSync(path.join(pkg, '.gitignore'))
+      ? fs.readFileSync(path.join(pkg, '.gitignore'), 'utf8').split('\n').map((l) => l.trim())
+      : [];
+    expect(lines).not.toContain('plugins/demo/');
+  });
+
+  it('ignores the node_modules a vendored plugin may need, not the plugin itself', () => {
+    const pkg = tmpPkg();
+    const repo = tmpPluginRepo(claudePlugin);
+    runPluginsAdd({ url: `file://${repo}`, pluginName: 'demo', type: 'vendor', packagePath: pkg });
+    expect(fs.readFileSync(path.join(pkg, '.gitignore'), 'utf8')).toContain('plugins/demo/node_modules/');
+  });
+
+  it('reports how to install a vendored plugin whose code needs npm dependencies', () => {
+    const pkg = tmpPkg();
+    const repo = tmpPluginRepo({
+      'package.json': JSON.stringify({ name: 'pi-web-access', pi: { extensions: ['./index.ts'] }, dependencies: { linkedom: '*' } }),
+      'index.ts': 'import "linkedom";\n',
+    });
+    const { pendingDeps } = runPluginsAdd({ url: `file://${repo}`, pluginName: 'pi-web-access', type: 'vendor', packagePath: pkg });
+    expect(pendingDeps?.deps).toBe(1);
+    expect(pendingDeps?.command).toBe(`cd ${packagePluginDir(pkg, 'pi-web-access')} && npm install --omit=dev`);
+  });
+
+  it('reports nothing for a vendored plugin with no dependencies', () => {
+    const pkg = tmpPkg();
+    const repo = tmpPluginRepo(claudePlugin);
+    expect(runPluginsAdd({ url: `file://${repo}`, pluginName: 'demo', type: 'vendor', packagePath: pkg }).pendingDeps)
+      .toBeUndefined();
+  });
+
+  it('still ignores the plugin dir when a vendored plugin is replaced by a reference', () => {
+    const pkg = tmpPkg();
+    const repo = tmpPluginRepo(claudePlugin);
+    runPluginsAdd({ url: `file://${repo}`, pluginName: 'demo', type: 'vendor', packagePath: pkg });
+    runPluginsAdd({ url: 'https://github.com/x/demo', pluginName: 'demo', type: 'reference', packagePath: pkg, force: true });
+    const lines = fs.readFileSync(path.join(pkg, '.gitignore'), 'utf8').split('\n').map((l) => l.trim());
+    expect(lines).toContain('plugins/demo/');
   });
 
   it('throws when the plugin already exists without --force', () => {

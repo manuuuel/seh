@@ -205,6 +205,22 @@ export function needsHostInstall(
   return { spec: name, deps };
 }
 
+/**
+ * The dependency situation of a plugin on disk: which agents load it as a
+ * module, and how many uninstalled dependencies stand in the way. Callers turn
+ * this into instructions — the wording differs for a vendored copy and a
+ * referenced source.
+ */
+export function pendingDependencies(
+  pluginRoot: string,
+  paths?: Record<string, string>,
+): { spec: string; deps: number; adapters: DetectedAdapter[] } | null {
+  const adapters = detectAdapters(pluginRoot, paths).filter((a) => a.entrypoints);
+  const entrypoints = adapters.flatMap((a) => a.entrypoints!(pluginRoot));
+  const pending = needsHostInstall(pluginRoot, entrypoints);
+  return pending ? { ...pending, adapters } : null;
+}
+
 /** Link name in the agent's plugin dir: the plugin name, keeping a file subpath's extension. */
 export function linkNameFor(pluginName: string, subpath: string): string {
   const ext = subpath === '.' ? '' : path.extname(subpath);

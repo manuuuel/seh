@@ -971,8 +971,8 @@ var require_command = __commonJS({
     "use strict";
     var EventEmitter = __require("events").EventEmitter;
     var childProcess = __require("child_process");
-    var path15 = __require("path");
-    var fs18 = __require("fs");
+    var path16 = __require("path");
+    var fs19 = __require("fs");
     var process2 = __require("process");
     var { Argument: Argument2, humanReadableArgName } = require_argument();
     var { CommanderError: CommanderError2 } = require_error();
@@ -1904,11 +1904,11 @@ Expecting one of '${allowedValues.join("', '")}'`);
         let launchWithNode = false;
         const sourceExt = [".js", ".ts", ".tsx", ".mjs", ".cjs"];
         function findFile(baseDir, baseName) {
-          const localBin = path15.resolve(baseDir, baseName);
-          if (fs18.existsSync(localBin)) return localBin;
-          if (sourceExt.includes(path15.extname(baseName))) return void 0;
+          const localBin = path16.resolve(baseDir, baseName);
+          if (fs19.existsSync(localBin)) return localBin;
+          if (sourceExt.includes(path16.extname(baseName))) return void 0;
           const foundExt = sourceExt.find(
-            (ext) => fs18.existsSync(`${localBin}${ext}`)
+            (ext) => fs19.existsSync(`${localBin}${ext}`)
           );
           if (foundExt) return `${localBin}${foundExt}`;
           return void 0;
@@ -1920,21 +1920,21 @@ Expecting one of '${allowedValues.join("', '")}'`);
         if (this._scriptPath) {
           let resolvedScriptPath;
           try {
-            resolvedScriptPath = fs18.realpathSync(this._scriptPath);
+            resolvedScriptPath = fs19.realpathSync(this._scriptPath);
           } catch (err) {
             resolvedScriptPath = this._scriptPath;
           }
-          executableDir = path15.resolve(
-            path15.dirname(resolvedScriptPath),
+          executableDir = path16.resolve(
+            path16.dirname(resolvedScriptPath),
             executableDir
           );
         }
         if (executableDir) {
           let localFile = findFile(executableDir, executableFile);
           if (!localFile && !subcommand._executableFile && this._scriptPath) {
-            const legacyName = path15.basename(
+            const legacyName = path16.basename(
               this._scriptPath,
-              path15.extname(this._scriptPath)
+              path16.extname(this._scriptPath)
             );
             if (legacyName !== this._name) {
               localFile = findFile(
@@ -1945,7 +1945,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
           }
           executableFile = localFile || executableFile;
         }
-        launchWithNode = sourceExt.includes(path15.extname(executableFile));
+        launchWithNode = sourceExt.includes(path16.extname(executableFile));
         let proc;
         if (process2.platform !== "win32") {
           if (launchWithNode) {
@@ -2785,7 +2785,7 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * @return {Command}
        */
       nameFromFilename(filename) {
-        this._name = path15.basename(filename, path15.extname(filename));
+        this._name = path16.basename(filename, path16.extname(filename));
         return this;
       }
       /**
@@ -2799,9 +2799,9 @@ Expecting one of '${allowedValues.join("', '")}'`);
        * @param {string} [path]
        * @return {(string|null|Command)}
        */
-      executableDir(path16) {
-        if (path16 === void 0) return this._executableDir;
-        this._executableDir = path16;
+      executableDir(path17) {
+        if (path17 === void 0) return this._executableDir;
+        this._executableDir = path17;
         return this;
       }
       /**
@@ -7907,8 +7907,8 @@ var {
 // src/cli.ts
 var import_prompts = __toESM(require_prompts3(), 1);
 import os7 from "os";
-import path14 from "path";
-import { fileURLToPath as fileURLToPath2 } from "url";
+import path15 from "path";
+import { fileURLToPath as fileURLToPath3 } from "url";
 import { spawnSync } from "child_process";
 
 // src/commands/initGlobal.ts
@@ -8121,13 +8121,13 @@ function runInitGlobal(opts) {
 }
 
 // src/commands/initProject.ts
-import fs6 from "fs";
-import path6 from "path";
+import fs7 from "fs";
+import path7 from "path";
 
 // src/commands/sync.ts
-import fs5 from "fs";
+import fs6 from "fs";
 import os2 from "os";
-import path5 from "path";
+import path6 from "path";
 
 // src/links.ts
 import fs3 from "fs";
@@ -8285,8 +8285,20 @@ function runMemoryRemove(opts) {
   fs4.rmSync(filePath);
 }
 
+// src/version.ts
+import fs5 from "fs";
+import path5 from "path";
+import { fileURLToPath as fileURLToPath2 } from "url";
+var cached = null;
+function version() {
+  if (cached !== null) return cached;
+  const here = path5.dirname(fileURLToPath2(import.meta.url));
+  const manifest = JSON.parse(fs5.readFileSync(path5.resolve(here, "..", "package.json"), "utf8"));
+  cached = manifest.version;
+  return cached;
+}
+
 // src/commands/sync.ts
-var VERSION = "0.4.1";
 var GITIGNORE_MARKER = "# seh \u2014 generated tool symlinks (regenerate with `seh sync`)";
 var GITIGNORE_BLOCK = [
   GITIGNORE_MARKER,
@@ -8298,15 +8310,15 @@ var GITIGNORE_BLOCK = [
 function buildProjectIndex(root, technologies, skills = {}, memoryEntries = null) {
   const sehDir = projectSehDir(root);
   const entries = [];
-  const projectMd = path5.join(sehDir, "project.md");
-  if (fs5.existsSync(projectMd)) {
-    entries.push({ title: titleOf(fs5.readFileSync(projectMd, "utf8")), relPath: ".seh/project.md", cue: moduleCue(".seh/project.md") });
+  const projectMd = path6.join(sehDir, "project.md");
+  if (fs6.existsSync(projectMd)) {
+    entries.push({ title: titleOf(fs6.readFileSync(projectMd, "utf8")), relPath: ".seh/project.md", cue: moduleCue(".seh/project.md") });
   }
-  const domainDir = path5.join(sehDir, "domain");
-  if (fs5.existsSync(domainDir)) {
-    for (const f of fs5.readdirSync(domainDir).filter((x) => x.endsWith(".md")).sort()) {
+  const domainDir = path6.join(sehDir, "domain");
+  if (fs6.existsSync(domainDir)) {
+    for (const f of fs6.readdirSync(domainDir).filter((x) => x.endsWith(".md")).sort()) {
       const rel = `.seh/domain/${f}`;
-      const content = fs5.readFileSync(path5.join(domainDir, f), "utf8");
+      const content = fs6.readFileSync(path6.join(domainDir, f), "utf8");
       entries.push({ title: titleOf(content), relPath: rel, cue: moduleCue(rel) });
     }
   }
@@ -8321,12 +8333,17 @@ function buildProjectIndex(root, technologies, skills = {}, memoryEntries = null
   }
   return result;
 }
+function expectedProjectIndex(root, technologies, resolver) {
+  const skills = resolver ? resolver.skills() : {};
+  const memoryEntries = fs6.existsSync(projectMemoryDir(root)) ? runMemoryList({ root }).entries : null;
+  return buildProjectIndex(root, technologies, skills, memoryEntries);
+}
 function ensureGitignore(root) {
-  const gi = path5.join(root, ".gitignore");
-  const existing = fs5.existsSync(gi) ? fs5.readFileSync(gi, "utf8") : "";
+  const gi = path6.join(root, ".gitignore");
+  const existing = fs6.existsSync(gi) ? fs6.readFileSync(gi, "utf8") : "";
   if (existing.includes(GITIGNORE_MARKER)) return;
   const sep = existing.length > 0 && !existing.endsWith("\n") ? "\n" : "";
-  fs5.writeFileSync(gi, existing + sep + (existing.length > 0 ? "\n" : "") + GITIGNORE_BLOCK + "\n");
+  fs6.writeFileSync(gi, existing + sep + (existing.length > 0 ? "\n" : "") + GITIGNORE_BLOCK + "\n");
 }
 function runSync(opts) {
   for (const tech of opts.technologies) {
@@ -8336,28 +8353,28 @@ function runSync(opts) {
   }
   const written = [];
   const stackDir = projectStackDir(opts.root);
-  fs5.mkdirSync(stackDir, { recursive: true });
+  fs6.mkdirSync(stackDir, { recursive: true });
   for (const tech of opts.technologies) {
     const content = opts.resolver ? opts.resolver.stackModule(tech) : stackModule(tech);
-    fs5.writeFileSync(path5.join(stackDir, `${tech}.md`), content);
-    written.push(path5.join(".seh", "stack", `${tech}.md`));
+    fs6.writeFileSync(path6.join(stackDir, `${tech}.md`), content);
+    written.push(path6.join(".seh", "stack", `${tech}.md`));
   }
-  fs5.mkdirSync(projectSehDir(opts.root), { recursive: true });
-  const skills = opts.resolver ? opts.resolver.skills() : {};
-  const memoryDir = projectMemoryDir(opts.root);
-  const memoryEntries = fs5.existsSync(memoryDir) ? runMemoryList({ root: opts.root }).entries : null;
-  fs5.writeFileSync(projectCanonicalIndex(opts.root), buildProjectIndex(opts.root, opts.technologies, skills, memoryEntries));
-  written.push(path5.join(".seh", "AGENTS.md"));
-  const lock = { version: VERSION, technologies: opts.technologies, generatedAt: (/* @__PURE__ */ new Date()).toISOString() };
-  fs5.writeFileSync(lockFile(opts.root), JSON.stringify(lock, null, 2) + "\n");
+  fs6.mkdirSync(projectSehDir(opts.root), { recursive: true });
+  fs6.writeFileSync(
+    projectCanonicalIndex(opts.root),
+    expectedProjectIndex(opts.root, opts.technologies, opts.resolver)
+  );
+  written.push(path6.join(".seh", "AGENTS.md"));
+  const lock = { version: version(), technologies: opts.technologies, generatedAt: (/* @__PURE__ */ new Date()).toISOString() };
+  fs6.writeFileSync(lockFile(opts.root), JSON.stringify(lock, null, 2) + "\n");
   written.push("seh.lock");
   if (opts.resolver) {
-    const repoName = path5.basename(opts.root);
+    const repoName = path6.basename(opts.root);
     for (const { relPath, content } of opts.resolver.projectOverlayFiles(repoName)) {
-      const dest = path5.join(projectSehDir(opts.root), relPath);
-      fs5.mkdirSync(path5.dirname(dest), { recursive: true });
-      fs5.writeFileSync(dest, content);
-      const normalized = path5.join(".seh", relPath);
+      const dest = path6.join(projectSehDir(opts.root), relPath);
+      fs6.mkdirSync(path6.dirname(dest), { recursive: true });
+      fs6.writeFileSync(dest, content);
+      const normalized = path6.join(".seh", relPath);
       if (!written.includes(normalized)) written.push(normalized);
     }
   }
@@ -8371,14 +8388,14 @@ function runSync(opts) {
 
 // src/commands/initProject.ts
 function templateFiles() {
-  const base = path6.join(assetsDir(), "project-template");
+  const base = path7.join(assetsDir(), "project-template");
   const out = [];
   const walk = (dir) => {
-    for (const entry of fs6.readdirSync(dir, { withFileTypes: true })) {
-      const abs = path6.join(dir, entry.name);
+    for (const entry of fs7.readdirSync(dir, { withFileTypes: true })) {
+      const abs = path7.join(dir, entry.name);
       if (entry.isDirectory()) walk(abs);
       else if (entry.name.endsWith(".md")) {
-        out.push({ relPath: path6.relative(base, abs), content: fs6.readFileSync(abs, "utf8") });
+        out.push({ relPath: path7.relative(base, abs), content: fs7.readFileSync(abs, "utf8") });
       }
     }
   };
@@ -8396,13 +8413,13 @@ function runInitProject(opts) {
   const skipped = [];
   const filesToScaffold = opts.templateName && opts.resolver ? opts.resolver.projectTemplateFiles(opts.templateName) : templateFiles();
   for (const file of filesToScaffold) {
-    const dest = path6.join(opts.root, file.relPath);
-    fs6.mkdirSync(path6.dirname(dest), { recursive: true });
-    if (fs6.existsSync(dest) && !opts.force) {
+    const dest = path7.join(opts.root, file.relPath);
+    fs7.mkdirSync(path7.dirname(dest), { recursive: true });
+    if (fs7.existsSync(dest) && !opts.force) {
       skipped.push(file.relPath);
       continue;
     }
-    fs6.writeFileSync(dest, file.content);
+    fs7.writeFileSync(dest, file.content);
     created.push(file.relPath);
   }
   const { written } = runSync({
@@ -8416,24 +8433,24 @@ function runInitProject(opts) {
 }
 
 // src/commands/check.ts
-import fs7 from "fs";
-import path7 from "path";
+import fs8 from "fs";
+import path8 from "path";
 function runCheck(opts) {
   const drift = [];
   const missing = [];
   const lockPath = lockFile(opts.root);
-  if (!fs7.existsSync(lockPath)) return { ok: false, drift: [], missing: ["seh.lock"] };
-  const lock = JSON.parse(fs7.readFileSync(lockPath, "utf8"));
+  if (!fs8.existsSync(lockPath)) return { ok: false, drift: [], missing: ["seh.lock"] };
+  const lock = JSON.parse(fs8.readFileSync(lockPath, "utf8"));
   const techs = lock.technologies ?? [];
   const idxPath = projectCanonicalIndex(opts.root);
-  const expectedIdx = buildProjectIndex(opts.root, techs);
-  if (!fs7.existsSync(idxPath)) missing.push(".seh/AGENTS.md");
-  else if (fs7.readFileSync(idxPath, "utf8") !== expectedIdx) drift.push(".seh/AGENTS.md");
+  const expectedIdx = expectedProjectIndex(opts.root, techs, opts.resolver);
+  if (!fs8.existsSync(idxPath)) missing.push(".seh/AGENTS.md");
+  else if (fs8.readFileSync(idxPath, "utf8") !== expectedIdx) drift.push(".seh/AGENTS.md");
   for (const tech of techs) {
     const rel = `.seh/stack/${tech}.md`;
-    const p = path7.join(projectStackDir(opts.root), `${tech}.md`);
-    if (!fs7.existsSync(p)) missing.push(rel);
-    else if (fs7.readFileSync(p, "utf8") !== stackModule(tech)) drift.push(rel);
+    const p = path8.join(projectStackDir(opts.root), `${tech}.md`);
+    if (!fs8.existsSync(p)) missing.push(rel);
+    else if (fs8.readFileSync(p, "utf8") !== stackModule(tech)) drift.push(rel);
   }
   const targets = [
     ["AGENTS.md", projectIndexFile(opts.root)],
@@ -8441,13 +8458,13 @@ function runCheck(opts) {
     ["GEMINI.md", projectGeminiFile(opts.root)],
     [".github/copilot-instructions.md", projectCopilotFile(opts.root)]
   ];
-  const canonicalReal = fs7.existsSync(idxPath) ? fs7.realpathSync(idxPath) : idxPath;
+  const canonicalReal = fs8.existsSync(idxPath) ? fs8.realpathSync(idxPath) : idxPath;
   for (const [label, target] of targets) {
-    const stat = fs7.lstatSync(target, { throwIfNoEntry: false });
+    const stat = fs8.lstatSync(target, { throwIfNoEntry: false });
     if (!stat) continue;
     const ok = stat.isSymbolicLink() && (() => {
       try {
-        return fs7.realpathSync(target) === canonicalReal;
+        return fs8.realpathSync(target) === canonicalReal;
       } catch {
         return false;
       }
@@ -8458,7 +8475,7 @@ function runCheck(opts) {
 }
 
 // src/commands/link.ts
-import fs8 from "fs";
+import fs9 from "fs";
 function runLink(opts) {
   const known = SUPPORTED_AGENTS;
   for (const a of [...opts.add ?? [], ...opts.remove ?? []]) {
@@ -8480,18 +8497,18 @@ function runLink(opts) {
     unlinked.push(a);
   }
   const agents = [...set].sort();
-  fs8.writeFileSync(cfgPath, JSON.stringify({ ...cfg, agents }, null, 2) + "\n");
+  fs9.writeFileSync(cfgPath, JSON.stringify({ ...cfg, agents }, null, 2) + "\n");
   return { linked, unlinked, agents };
 }
 
 // src/commands/package.ts
-import fs9 from "fs";
-import path8 from "path";
+import fs10 from "fs";
+import path9 from "path";
 import os3 from "os";
 function runPackageInit(opts) {
   const home2 = opts.home ?? os3.homedir();
   const p = opts.packagePath;
-  if (fs9.existsSync(packageHarnessJson(p)) && !opts.force) {
+  if (fs10.existsSync(packageHarnessJson(p)) && !opts.force) {
     throw new Error(`harness package already exists at ${p}. Use --force to overwrite.`);
   }
   for (const d of [
@@ -8502,26 +8519,26 @@ function runPackageInit(opts) {
     packageSkillsDir(p),
     packagePluginsDir(p)
   ]) {
-    fs9.mkdirSync(d, { recursive: true });
+    fs10.mkdirSync(d, { recursive: true });
   }
   const pkg = {
-    name: path8.basename(p),
+    name: path9.basename(p),
     version: "1.0.0",
     description: "Personal coding harness"
   };
-  fs9.writeFileSync(packageHarnessJson(p), JSON.stringify(pkg, null, 2) + "\n");
+  fs10.writeFileSync(packageHarnessJson(p), JSON.stringify(pkg, null, 2) + "\n");
   const existingGlobal = globalIndexFile(home2);
-  const globalContent = fs9.existsSync(existingGlobal) ? fs9.readFileSync(existingGlobal, "utf8") : buildGlobalAgentsMd();
-  fs9.writeFileSync(packageGlobalAgentsMd(p), globalContent);
-  fs9.writeFileSync(packageGlobalConfigJson(p), JSON.stringify({ agents: [] }, null, 2) + "\n");
+  const globalContent = fs10.existsSync(existingGlobal) ? fs10.readFileSync(existingGlobal, "utf8") : buildGlobalAgentsMd();
+  fs10.writeFileSync(packageGlobalAgentsMd(p), globalContent);
+  fs10.writeFileSync(packageGlobalConfigJson(p), JSON.stringify({ agents: [] }, null, 2) + "\n");
   for (const tech of SUPPORTED_TECHS) {
-    fs9.writeFileSync(
-      path8.join(packageTemplatesStackDir(p), `${tech}.md`),
+    fs10.writeFileSync(
+      path9.join(packageTemplatesStackDir(p), `${tech}.md`),
       stackModule(tech)
     );
   }
-  fs9.writeFileSync(
-    path8.join(p, "CHANGELOG.md"),
+  fs10.writeFileSync(
+    path9.join(p, "CHANGELOG.md"),
     "# Harness Changelog\n\nRecord what you changed and why.\n"
   );
   return {
@@ -8536,23 +8553,23 @@ function runPackageInit(opts) {
 }
 function runPackageUse(opts) {
   const home2 = opts.home ?? os3.homedir();
-  const resolved = path8.resolve(opts.packagePath);
-  if (!fs9.existsSync(resolved)) {
+  const resolved = path9.resolve(opts.packagePath);
+  if (!fs10.existsSync(resolved)) {
     throw new Error(`path does not exist: ${resolved}`);
   }
-  if (!fs9.existsSync(packageHarnessJson(resolved))) {
+  if (!fs10.existsSync(packageHarnessJson(resolved))) {
     throw new Error(`not a harness package (missing harness.json): ${resolved}`);
   }
   const cfgFile = globalConfigFile(home2);
   const cfg = readGlobalConfig(home2);
   cfg.packagePath = resolved;
-  fs9.mkdirSync(path8.dirname(cfgFile), { recursive: true });
-  fs9.writeFileSync(cfgFile, JSON.stringify(cfg, null, 2) + "\n");
+  fs10.mkdirSync(path9.dirname(cfgFile), { recursive: true });
+  fs10.writeFileSync(cfgFile, JSON.stringify(cfg, null, 2) + "\n");
 }
 function runPackageStatus(opts) {
   const home2 = opts.home ?? os3.homedir();
   const cfgFile = globalConfigFile(home2);
-  if (!fs9.existsSync(cfgFile)) return { packagePath: null, pkg: null, dirs: {} };
+  if (!fs10.existsSync(cfgFile)) return { packagePath: null, pkg: null, dirs: {} };
   let packagePath = null;
   try {
     const cfg = readGlobalConfig(home2);
@@ -8562,55 +8579,55 @@ function runPackageStatus(opts) {
   if (!packagePath) return { packagePath: null, pkg: null, dirs: {} };
   let pkg = null;
   const hj = packageHarnessJson(packagePath);
-  if (fs9.existsSync(hj)) {
+  if (fs10.existsSync(hj)) {
     try {
-      pkg = JSON.parse(fs9.readFileSync(hj, "utf8"));
+      pkg = JSON.parse(fs10.readFileSync(hj, "utf8"));
     } catch {
     }
   }
   const dirs = {
-    "global/": fs9.existsSync(packageGlobalDir(packagePath)),
-    "templates/stack/": fs9.existsSync(packageTemplatesStackDir(packagePath)),
-    "templates/project/": fs9.existsSync(packageTemplatesProjectDir(packagePath)),
-    "projects/": fs9.existsSync(packageProjectsDir(packagePath)),
-    "skills/": fs9.existsSync(packageSkillsDir(packagePath)),
-    "plugins/": fs9.existsSync(packagePluginsDir(packagePath))
+    "global/": fs10.existsSync(packageGlobalDir(packagePath)),
+    "templates/stack/": fs10.existsSync(packageTemplatesStackDir(packagePath)),
+    "templates/project/": fs10.existsSync(packageTemplatesProjectDir(packagePath)),
+    "projects/": fs10.existsSync(packageProjectsDir(packagePath)),
+    "skills/": fs10.existsSync(packageSkillsDir(packagePath)),
+    "plugins/": fs10.existsSync(packagePluginsDir(packagePath))
   };
   return { packagePath, pkg, dirs };
 }
 
 // src/commands/skills.ts
-import fs11 from "fs";
+import fs12 from "fs";
 
 // src/units.ts
-import fs10 from "fs";
-import path9 from "path";
+import fs11 from "fs";
+import path10 from "path";
 import os4 from "os";
 import { execSync } from "child_process";
 function copyDir(src, dest) {
-  fs10.mkdirSync(dest, { recursive: true });
-  for (const entry of fs10.readdirSync(src, { withFileTypes: true })) {
+  fs11.mkdirSync(dest, { recursive: true });
+  for (const entry of fs11.readdirSync(src, { withFileTypes: true })) {
     if (entry.name === ".git") continue;
-    const s = path9.join(src, entry.name);
-    const d = path9.join(dest, entry.name);
+    const s = path10.join(src, entry.name);
+    const d = path10.join(dest, entry.name);
     if (entry.isDirectory()) copyDir(s, d);
-    else fs10.copyFileSync(s, d);
+    else fs11.copyFileSync(s, d);
   }
 }
 function cloneAt(url, ref, dest) {
-  const tmp = fs10.mkdtempSync(path9.join(os4.tmpdir(), "sehunit-"));
+  const tmp = fs11.mkdtempSync(path10.join(os4.tmpdir(), "sehunit-"));
   try {
     execSync(`git clone --depth 1 --branch ${ref} ${url} ${tmp}`, { stdio: "pipe" });
-    if (fs10.existsSync(dest)) fs10.rmSync(dest, { recursive: true, force: true });
+    if (fs11.existsSync(dest)) fs11.rmSync(dest, { recursive: true, force: true });
     copyDir(tmp, dest);
   } finally {
-    fs10.rmSync(tmp, { recursive: true, force: true });
+    fs11.rmSync(tmp, { recursive: true, force: true });
   }
 }
 function readHarness(packagePath) {
   const p = packageHarnessJson(packagePath);
-  if (!fs10.existsSync(p)) return null;
-  return JSON.parse(fs10.readFileSync(p, "utf8"));
+  if (!fs11.existsSync(p)) return null;
+  return JSON.parse(fs11.readFileSync(p, "utf8"));
 }
 function requireHarness(packagePath) {
   const harness = readHarness(packagePath);
@@ -8618,20 +8635,20 @@ function requireHarness(packagePath) {
   return harness;
 }
 function writeHarness(packagePath, harness) {
-  fs10.writeFileSync(packageHarnessJson(packagePath), JSON.stringify(harness, null, 2) + "\n");
+  fs11.writeFileSync(packageHarnessJson(packagePath), JSON.stringify(harness, null, 2) + "\n");
 }
 function addToGitignore(packagePath, entry) {
-  const gi = path9.join(packagePath, ".gitignore");
-  const existing = fs10.existsSync(gi) ? fs10.readFileSync(gi, "utf8") : "";
+  const gi = path10.join(packagePath, ".gitignore");
+  const existing = fs11.existsSync(gi) ? fs11.readFileSync(gi, "utf8") : "";
   if (existing.split("\n").some((line) => line.trim() === entry)) return;
   const sep = existing.length > 0 && !existing.endsWith("\n") ? "\n" : "";
-  fs10.writeFileSync(gi, existing + sep + entry + "\n");
+  fs11.writeFileSync(gi, existing + sep + entry + "\n");
 }
 
 // src/commands/skills.ts
 function runSkillsAdd(opts) {
   const skillDir = packageSkillDir(opts.packagePath, opts.skillName);
-  if (fs11.existsSync(skillDir) && !opts.force) {
+  if (fs12.existsSync(skillDir) && !opts.force) {
     throw new Error(`Skill '${opts.skillName}' already exists at ${skillDir}. Use --force to overwrite.`);
   }
   const harness = requireHarness(opts.packagePath);
@@ -8669,12 +8686,12 @@ function runSkillsList(opts) {
     type: entry.type,
     source: entry.type === "reference" ? entry.source : void 0,
     ref: entry.type === "reference" ? entry.ref : void 0,
-    onDisk: fs11.existsSync(packageSkillDir(opts.packagePath, name)),
+    onDisk: fs12.existsSync(packageSkillDir(opts.packagePath, name)),
     invoke: entry.invoke
   }));
   const skillsDir = packageSkillsDir(opts.packagePath);
-  if (fs11.existsSync(skillsDir)) {
-    for (const entry of fs11.readdirSync(skillsDir, { withFileTypes: true })) {
+  if (fs12.existsSync(skillsDir)) {
+    for (const entry of fs12.readdirSync(skillsDir, { withFileTypes: true })) {
       if (entry.isDirectory() && !skills.find((s) => s.name === entry.name)) {
         skills.push({ name: entry.name, type: "vendor", onDisk: true });
       }
@@ -8684,28 +8701,28 @@ function runSkillsList(opts) {
 }
 
 // src/commands/plugins.ts
-import fs13 from "fs";
+import fs14 from "fs";
 
 // src/plugin-adapters.ts
-import fs12 from "fs";
-import path10 from "path";
-var has = (...parts) => fs12.existsSync(path10.join(...parts));
+import fs13 from "fs";
+import path11 from "path";
+var has = (...parts) => fs13.existsSync(path11.join(...parts));
 function readJson(file) {
   try {
-    return JSON.parse(fs12.readFileSync(file, "utf8"));
+    return JSON.parse(fs13.readFileSync(file, "utf8"));
   } catch {
     return null;
   }
 }
 function safeSubpath(p) {
   const unified = p.replace(/\\/g, "/");
-  if (path10.isAbsolute(p) || unified.startsWith("/") || /^[a-zA-Z]:/.test(unified)) return null;
-  const rel = path10.posix.normalize(unified).replace(/^\.\//, "").replace(/\/+$/, "");
+  if (path11.isAbsolute(p) || unified.startsWith("/") || /^[a-zA-Z]:/.test(unified)) return null;
+  const rel = path11.posix.normalize(unified).replace(/^\.\//, "").replace(/\/+$/, "");
   if (rel === "" || rel === ".") return ".";
   return rel.split("/").includes("..") ? null : rel;
 }
 function piEntrypoints(root) {
-  const pkg = readJson(path10.join(root, "package.json"));
+  const pkg = readJson(path11.join(root, "package.json"));
   const declared = pkg?.["pi"]?.extensions;
   if (Array.isArray(declared)) {
     const resolved = declared.filter((e) => typeof e === "string").map((e) => safeSubpath(e)).filter((rel) => rel !== null && has(root, rel));
@@ -8720,14 +8737,14 @@ var detectPi = (root) => piEntrypoints(root).length > 0 ? "." : null;
 var OPENCODE_PLUGIN_DIRS = [".opencode/plugin", ".opencode/plugins"];
 var OPENCODE_EXTS = [".ts", ".js", ".mjs"];
 function detectOpencode(root) {
-  const main = readJson(path10.join(root, "package.json"))?.["main"];
+  const main = readJson(path11.join(root, "package.json"))?.["main"];
   if (typeof main === "string") {
     const rel = safeSubpath(main);
     if (rel !== null && rel.startsWith(".opencode/") && has(root, rel)) return rel;
   }
   for (const dir of OPENCODE_PLUGIN_DIRS) {
     if (!has(root, dir)) continue;
-    const files = fs12.readdirSync(path10.join(root, dir), { withFileTypes: true }).filter((e) => !e.isDirectory() && OPENCODE_EXTS.includes(path10.extname(e.name))).map((e) => `${dir}/${e.name}`);
+    const files = fs13.readdirSync(path11.join(root, dir), { withFileTypes: true }).filter((e) => !e.isDirectory() && OPENCODE_EXTS.includes(path11.extname(e.name))).map((e) => `${dir}/${e.name}`);
     if (files.length === 1) return files[0];
   }
   return null;
@@ -8735,24 +8752,24 @@ function detectOpencode(root) {
 var PLUGIN_ADAPTERS = [
   {
     agent: "claude",
-    targetDir: (home2) => path10.join(home2, ".claude", "skills"),
+    targetDir: (home2) => path11.join(home2, ".claude", "skills"),
     detect: (root) => has(root, ".claude-plugin", "plugin.json") ? "." : null
   },
   {
     agent: "gemini",
-    targetDir: (home2) => path10.join(home2, ".gemini", "extensions"),
+    targetDir: (home2) => path11.join(home2, ".gemini", "extensions"),
     detect: (root) => has(root, "gemini-extension.json") ? "." : null
   },
   {
     agent: "pi",
-    targetDir: (home2) => path10.join(home2, ".pi", "agent", "extensions"),
+    targetDir: (home2) => path11.join(home2, ".pi", "agent", "extensions"),
     detect: detectPi,
     entrypoints: piEntrypoints,
     hostInstall: (spec) => `pi install ${spec}`
   },
   {
     agent: "opencode",
-    targetDir: (home2) => path10.join(home2, ".config", "opencode", "plugins"),
+    targetDir: (home2) => path11.join(home2, ".config", "opencode", "plugins"),
     detect: detectOpencode,
     entrypoints: (root) => {
       const sub = detectOpencode(root);
@@ -8762,7 +8779,7 @@ var PLUGIN_ADAPTERS = [
   },
   {
     agent: "agents",
-    targetDir: (home2) => path10.join(home2, ".agents", "plugins"),
+    targetDir: (home2) => path11.join(home2, ".agents", "plugins"),
     detect: (root) => has(root, ".agents", "plugins", "marketplace.json") ? "." : null
   }
 ];
@@ -8789,13 +8806,13 @@ function detectAdapters(pluginRoot, overrides = {}) {
 }
 function manifestsGoverning(root, entrypoint) {
   const manifests = [];
-  let dir = path10.dirname(path10.join(root, entrypoint));
-  const stop = path10.resolve(root);
+  let dir = path11.dirname(path11.join(root, entrypoint));
+  const stop = path11.resolve(root);
   for (; ; ) {
-    const manifest = path10.join(dir, "package.json");
-    if (fs12.existsSync(manifest)) manifests.push(manifest);
-    if (path10.resolve(dir) === stop) break;
-    const parent = path10.dirname(dir);
+    const manifest = path11.join(dir, "package.json");
+    if (fs13.existsSync(manifest)) manifests.push(manifest);
+    if (path11.resolve(dir) === stop) break;
+    const parent = path11.dirname(dir);
     if (parent === dir) break;
     dir = parent;
   }
@@ -8803,9 +8820,9 @@ function manifestsGoverning(root, entrypoint) {
 }
 function needsHostInstall(pluginRoot, entrypoints) {
   if (entrypoints.length === 0) return null;
-  const pkg = readJson(path10.join(pluginRoot, "package.json"));
+  const pkg = readJson(path11.join(pluginRoot, "package.json"));
   if (!pkg) return null;
-  if (fs12.existsSync(path10.join(pluginRoot, "node_modules"))) return null;
+  if (fs13.existsSync(path11.join(pluginRoot, "node_modules"))) return null;
   const seen = /* @__PURE__ */ new Set();
   let deps = 0;
   for (const entrypoint of entrypoints) {
@@ -8817,7 +8834,7 @@ function needsHostInstall(pluginRoot, entrypoints) {
     }
   }
   if (deps === 0) return null;
-  const name = typeof pkg["name"] === "string" && pkg["name"] ? pkg["name"] : path10.basename(pluginRoot);
+  const name = typeof pkg["name"] === "string" && pkg["name"] ? pkg["name"] : path11.basename(pluginRoot);
   return { spec: name, deps };
 }
 function pendingDependencies(pluginRoot, paths) {
@@ -8827,14 +8844,14 @@ function pendingDependencies(pluginRoot, paths) {
   return pending ? { ...pending, adapters } : null;
 }
 function linkNameFor(pluginName, subpath) {
-  const ext = subpath === "." ? "" : path10.extname(subpath);
+  const ext = subpath === "." ? "" : path11.extname(subpath);
   return `${pluginName}${ext}`;
 }
 
 // src/commands/plugins.ts
 function coverage(packagePath, name, paths) {
   const dir = packagePluginDir(packagePath, name);
-  if (!fs13.existsSync(dir)) return [];
+  if (!fs14.existsSync(dir)) return [];
   try {
     return detectAdapters(dir, paths).map((a) => a.agent);
   } catch {
@@ -8843,7 +8860,7 @@ function coverage(packagePath, name, paths) {
 }
 function runPluginsAdd(opts) {
   const pluginDir = packagePluginDir(opts.packagePath, opts.pluginName);
-  if (fs13.existsSync(pluginDir) && !opts.force) {
+  if (fs14.existsSync(pluginDir) && !opts.force) {
     throw new Error(`Plugin '${opts.pluginName}' already exists at ${pluginDir}. Use --force to overwrite.`);
   }
   const harness = requireHarness(opts.packagePath);
@@ -8893,12 +8910,12 @@ function runPluginsList(opts) {
     type: entry.type,
     source: entry.type === "reference" ? entry.source : void 0,
     ref: entry.type === "reference" ? entry.ref : void 0,
-    onDisk: fs13.existsSync(packagePluginDir(opts.packagePath, name)),
+    onDisk: fs14.existsSync(packagePluginDir(opts.packagePath, name)),
     agents: coverage(opts.packagePath, name, entry.paths)
   }));
   const dir = packagePluginsDir(opts.packagePath);
-  if (fs13.existsSync(dir)) {
-    for (const entry of fs13.readdirSync(dir, { withFileTypes: true })) {
+  if (fs14.existsSync(dir)) {
+    for (const entry of fs14.readdirSync(dir, { withFileTypes: true })) {
       if (!entry.isDirectory() || plugins.some((p) => p.name === entry.name)) continue;
       plugins.push({
         name: entry.name,
@@ -8914,13 +8931,13 @@ function runPluginsList(opts) {
 }
 
 // src/commands/install.ts
-import fs15 from "fs";
-import path12 from "path";
+import fs16 from "fs";
+import path13 from "path";
 import os6 from "os";
 
 // src/package-resolver.ts
-import fs14 from "fs";
-import path11 from "path";
+import fs15 from "fs";
+import path12 from "path";
 import os5 from "os";
 var PackageResolver = class {
   constructor(packagePath) {
@@ -8935,29 +8952,29 @@ var PackageResolver = class {
   }
   stackModule(tech) {
     if (this.packagePath) {
-      const f = path11.join(packageTemplatesStackDir(this.packagePath), `${tech}.md`);
-      if (fs14.existsSync(f)) return fs14.readFileSync(f, "utf8");
+      const f = path12.join(packageTemplatesStackDir(this.packagePath), `${tech}.md`);
+      if (fs15.existsSync(f)) return fs15.readFileSync(f, "utf8");
     }
     return stackModule(tech);
   }
   globalAgentsMd() {
     if (!this.packagePath) return null;
     const p = packageGlobalAgentsMd(this.packagePath);
-    return fs14.existsSync(p) ? fs14.readFileSync(p, "utf8") : null;
+    return fs15.existsSync(p) ? fs15.readFileSync(p, "utf8") : null;
   }
   projectOverlayFiles(repoName) {
     if (!this.packagePath) return [];
-    const overlayDir = path11.join(packageProjectsDir(this.packagePath), repoName);
-    if (!fs14.existsSync(overlayDir)) return [];
+    const overlayDir = path12.join(packageProjectsDir(this.packagePath), repoName);
+    if (!fs15.existsSync(overlayDir)) return [];
     const result = [];
     const walk = (dir) => {
-      for (const entry of fs14.readdirSync(dir, { withFileTypes: true })) {
-        const abs = path11.join(dir, entry.name);
+      for (const entry of fs15.readdirSync(dir, { withFileTypes: true })) {
+        const abs = path12.join(dir, entry.name);
         if (entry.isDirectory()) walk(abs);
         else if (entry.name.endsWith(".md")) {
           result.push({
-            relPath: path11.relative(overlayDir, abs),
-            content: fs14.readFileSync(abs, "utf8")
+            relPath: path12.relative(overlayDir, abs),
+            content: fs15.readFileSync(abs, "utf8")
           });
         }
       }
@@ -8968,22 +8985,22 @@ var PackageResolver = class {
   projectTemplateNames() {
     if (!this.packagePath) return [];
     const dir = packageTemplatesProjectDir(this.packagePath);
-    if (!fs14.existsSync(dir)) return [];
-    return fs14.readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name).sort();
+    if (!fs15.existsSync(dir)) return [];
+    return fs15.readdirSync(dir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name).sort();
   }
   projectTemplateFiles(name) {
     if (!this.packagePath) return [];
-    const templateDir = path11.join(packageTemplatesProjectDir(this.packagePath), name);
-    if (!fs14.existsSync(templateDir)) return [];
+    const templateDir = path12.join(packageTemplatesProjectDir(this.packagePath), name);
+    if (!fs15.existsSync(templateDir)) return [];
     const result = [];
     const walk = (dir) => {
-      for (const entry of fs14.readdirSync(dir, { withFileTypes: true })) {
-        const abs = path11.join(dir, entry.name);
+      for (const entry of fs15.readdirSync(dir, { withFileTypes: true })) {
+        const abs = path12.join(dir, entry.name);
         if (entry.isDirectory()) walk(abs);
         else if (entry.name.endsWith(".md")) {
           result.push({
-            relPath: path11.relative(templateDir, abs),
-            content: fs14.readFileSync(abs, "utf8")
+            relPath: path12.relative(templateDir, abs),
+            content: fs15.readFileSync(abs, "utf8")
           });
         }
       }
@@ -8994,8 +9011,8 @@ var PackageResolver = class {
   skills() {
     if (!this.packagePath) return {};
     const p = packageHarnessJson(this.packagePath);
-    if (!fs14.existsSync(p)) return {};
-    const harness = JSON.parse(fs14.readFileSync(p, "utf8"));
+    if (!fs15.existsSync(p)) return {};
+    const harness = JSON.parse(fs15.readFileSync(p, "utf8"));
     return harness.skills ?? {};
   }
 };
@@ -9010,16 +9027,16 @@ function readResolver(home2 = os5.homedir()) {
 
 // src/commands/install.ts
 function symlink(target, source, force) {
-  fs15.mkdirSync(path12.dirname(target), { recursive: true });
-  const existing = fs15.lstatSync(target, { throwIfNoEntry: false });
+  fs16.mkdirSync(path13.dirname(target), { recursive: true });
+  const existing = fs16.lstatSync(target, { throwIfNoEntry: false });
   if (existing && !existing.isSymbolicLink() && !force) {
     throw new Error(
       `Refusing to replace ${target}: it is not a seh symlink. Move it aside, or re-run with --force to overwrite it.`
     );
   }
-  if (existing) fs15.rmSync(target, { recursive: true, force: true });
+  if (existing) fs16.rmSync(target, { recursive: true, force: true });
   try {
-    fs15.symlinkSync(path12.relative(path12.dirname(target), source), target);
+    fs16.symlinkSync(path13.relative(path13.dirname(target), source), target);
   } catch (err) {
     throw new Error(`Cannot create symlink ${target}: ${err instanceof Error ? err.message : String(err)}`);
   }
@@ -9027,8 +9044,8 @@ function symlink(target, source, force) {
 function installPlugin(opts) {
   const source = packagePluginDir(opts.packagePath, opts.name);
   const intermediate = sehPluginDir(opts.home, opts.name);
-  fs15.mkdirSync(sehPluginsDir(opts.home), { recursive: true });
-  if (!fs15.lstatSync(intermediate, { throwIfNoEntry: false }) || opts.force) {
+  fs16.mkdirSync(sehPluginsDir(opts.home), { recursive: true });
+  if (!fs16.lstatSync(intermediate, { throwIfNoEntry: false }) || opts.force) {
     symlink(intermediate, source, opts.force);
   }
   const pending = pendingDependencies(source, opts.paths);
@@ -9045,17 +9062,17 @@ function installPlugin(opts) {
   for (const adapter of adapters) {
     if (!opts.agents.includes(adapter.agent)) continue;
     const linkName = linkNameFor(opts.name, adapter.subpath);
-    const target = path12.join(adapter.targetDir(opts.home), linkName);
-    symlink(target, path12.join(intermediate, adapter.subpath), opts.force);
+    const target = path13.join(adapter.targetDir(opts.home), linkName);
+    symlink(target, path13.join(intermediate, adapter.subpath), opts.force);
     linked.push(adapter.agent);
   }
   return { name: opts.name, linked, skipped: opts.agents.filter((a) => !linked.includes(a)) };
 }
 function readPackageAgents(packagePath) {
   const p = packageGlobalConfigJson(packagePath);
-  if (!fs15.existsSync(p)) return [];
+  if (!fs16.existsSync(p)) return [];
   try {
-    const raw = JSON.parse(fs15.readFileSync(p, "utf8"));
+    const raw = JSON.parse(fs16.readFileSync(p, "utf8"));
     if (Array.isArray(raw.tools) && !raw.agents) return raw.tools;
     return Array.isArray(raw.agents) ? raw.agents : [];
   } catch {
@@ -9084,23 +9101,23 @@ function runPackageInstall(opts) {
     for (const [name, entry] of Object.entries(readHarness(packagePath)?.skills ?? {})) {
       if (entry.type !== "reference") continue;
       const skillDir = packageSkillDir(packagePath, name);
-      if (fs15.existsSync(skillDir) && !opts.force) continue;
+      if (fs16.existsSync(skillDir) && !opts.force) continue;
       cloneAt(entry.source, entry.ref, skillDir);
     }
     const skillsDir = packageSkillsDir(packagePath);
-    if (!fs15.existsSync(skillsDir)) return { installedSkills, installedHarness, installedPlugins };
-    fs15.mkdirSync(sehSkillsDir(home2), { recursive: true });
-    for (const entry of fs15.readdirSync(skillsDir, { withFileTypes: true })) {
+    if (!fs16.existsSync(skillsDir)) return { installedSkills, installedHarness, installedPlugins };
+    fs16.mkdirSync(sehSkillsDir(home2), { recursive: true });
+    for (const entry of fs16.readdirSync(skillsDir, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue;
       const name = entry.name;
       const pkgSkillPath = packageSkillDir(packagePath, name);
       const sehTarget = sehSkillDir(home2, name);
-      if (fs15.lstatSync(sehTarget, { throwIfNoEntry: false }) && !opts.force) continue;
-      if (fs15.lstatSync(sehTarget, { throwIfNoEntry: false })) {
-        fs15.rmSync(sehTarget, { force: true });
+      if (fs16.lstatSync(sehTarget, { throwIfNoEntry: false }) && !opts.force) continue;
+      if (fs16.lstatSync(sehTarget, { throwIfNoEntry: false })) {
+        fs16.rmSync(sehTarget, { force: true });
       }
-      const rel = path12.relative(path12.dirname(sehTarget), pkgSkillPath);
-      fs15.symlinkSync(rel, sehTarget);
+      const rel = path13.relative(path13.dirname(sehTarget), pkgSkillPath);
+      fs16.symlinkSync(rel, sehTarget);
       for (const agent of opts.agents ?? []) {
         linkSkill(agent, name, home2, sehTarget);
       }
@@ -9120,12 +9137,12 @@ function runPackageInstall(opts) {
     for (const [name, entry] of entries) {
       if (entry.type !== "reference") continue;
       const dir = packagePluginDir(packagePath, name);
-      if (fs15.existsSync(dir) && !opts.force) continue;
+      if (fs16.existsSync(dir) && !opts.force) continue;
       cloneAt(entry.source, entry.ref, dir);
     }
     const pluginsDir = packagePluginsDir(packagePath);
-    if (fs15.existsSync(pluginsDir)) {
-      for (const dir of fs15.readdirSync(pluginsDir, { withFileTypes: true })) {
+    if (fs16.existsSync(pluginsDir)) {
+      for (const dir of fs16.readdirSync(pluginsDir, { withFileTypes: true })) {
         if (!dir.isDirectory()) continue;
         const entry = harness?.plugins?.[dir.name];
         installedPlugins.push(installPlugin({
@@ -9144,12 +9161,12 @@ function runPackageInstall(opts) {
 }
 
 // src/detect.ts
-import fs16 from "fs";
-import path13 from "path";
-var has2 = (root, f) => fs16.existsSync(path13.join(root, f));
+import fs17 from "fs";
+import path14 from "path";
+var has2 = (root, f) => fs17.existsSync(path14.join(root, f));
 function hasTopLevelC(root) {
   try {
-    return fs16.readdirSync(root).some((f) => f.endsWith(".c"));
+    return fs17.readdirSync(root).some((f) => f.endsWith(".c"));
   } catch {
     return false;
   }
@@ -9169,7 +9186,7 @@ function detectTechnologies(root) {
 }
 
 // src/cli.ts
-import fs17 from "fs";
+import fs18 from "fs";
 var parseList = (s) => s ? s.split(",").map((x) => x.trim()).filter(Boolean) : [];
 function fail(err) {
   console.error(`seh error: ${err instanceof Error ? err.message : String(err)}`);
@@ -9177,7 +9194,7 @@ function fail(err) {
 }
 function buildProgram() {
   const program2 = new Command();
-  program2.name("seh").description("Portable AI coding harness generator").version("0.5.0");
+  program2.name("seh").description("Portable AI coding harness generator").version(version());
   const resolver = readResolver(os7.homedir());
   program2.command("init").description("Initialize the global harness (--global) or the current project").option("-g, --global", "set up the host-level global harness (~/.seh)").option("-f, --force", "overwrite existing files").option("--tech <list>", "comma-separated technologies (non-interactive)").option("--agents <list>", "comma-separated agents to symlink (global, non-interactive)").option("-y, --yes", "accept detected technologies without prompting").action(async (opts) => {
     try {
@@ -9261,7 +9278,7 @@ function buildProgram() {
   program2.command("sync").description("Regenerate the project index + stack modules from seh.lock").action(() => {
     try {
       const root = process.cwd();
-      const lock = JSON.parse(fs17.readFileSync(lockFile(root), "utf8"));
+      const lock = JSON.parse(fs18.readFileSync(lockFile(root), "utf8"));
       const res = runSync({ root, technologies: lock.technologies ?? [], home: os7.homedir(), resolver });
       console.log(`seh: wrote ${res.written.join(", ")}`);
     } catch (err) {
@@ -9270,7 +9287,7 @@ function buildProgram() {
   });
   program2.command("check").description("Detect drift between .seh sources and generated files").action(() => {
     try {
-      const res = runCheck({ root: process.cwd() });
+      const res = runCheck({ root: process.cwd(), resolver });
       if (res.ok) {
         console.log("seh: no drift.");
         return;
@@ -9314,7 +9331,7 @@ function buildProgram() {
   const pkg = program2.command("package").description("Manage harness packages");
   pkg.command("init [path]").description("Scaffold a new harness package").option("-f, --force", "overwrite existing package").action(async (pkgPath, opts) => {
     try {
-      const packagePath = path14.resolve(pkgPath ?? "my-harness");
+      const packagePath = path15.resolve(pkgPath ?? "my-harness");
       const res = runPackageInit({ packagePath, home: os7.homedir(), force: opts.force });
       console.log(`seh: package created at ${packagePath} [${res.created.length} files]`);
       console.log(`  Next: cd ${packagePath} && git init && git add . && git commit -m "init harness"`);
@@ -9325,7 +9342,7 @@ function buildProgram() {
   pkg.command("use <path>").description("Point seh at an existing harness package").action((pkgPath) => {
     try {
       runPackageUse({ packagePath: pkgPath, home: os7.homedir() });
-      console.log(`seh: active package \u2192 ${path14.resolve(pkgPath)}`);
+      console.log(`seh: active package \u2192 ${path15.resolve(pkgPath)}`);
     } catch (err) {
       fail(err);
     }
@@ -9598,7 +9615,7 @@ function isMainModule() {
   const argv1 = process.argv[1];
   if (!argv1) return false;
   try {
-    return fs17.realpathSync(fileURLToPath2(import.meta.url)) === fs17.realpathSync(argv1);
+    return fs18.realpathSync(fileURLToPath3(import.meta.url)) === fs18.realpathSync(argv1);
   } catch {
     return false;
   }

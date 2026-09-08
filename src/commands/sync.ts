@@ -7,9 +7,9 @@ import { buildIndex, buildSkillsSection, buildMemorySection, type IndexEntry, ti
 import { linkAgent, readConfiguredAgents, SUPPORTED_AGENTS } from '../links.js';
 import type { LockFile, SkillEntry, MemoryEntry } from '../types.js';
 import { runMemoryList } from './memory.js';
+import { version } from '../version.js';
 import type { PackageResolver } from '../package-resolver.js';
 
-const VERSION = '0.4.1';
 const GITIGNORE_MARKER = '# seh — generated tool symlinks (regenerate with `seh sync`)';
 const GITIGNORE_BLOCK = [
   GITIGNORE_MARKER,
@@ -54,6 +54,26 @@ export function buildProjectIndex(
   return result;
 }
 
+/**
+ * The canonical `.seh/AGENTS.md` for a project.
+ *
+ * `runSync` writes it and `runCheck` compares against it, so both must derive it
+ * identically — including the skills the active package contributes and the
+ * project's memory entries. Deriving it in two places is what made `check`
+ * report drift that `sync` could never clear.
+ */
+export function expectedProjectIndex(
+  root: string,
+  technologies: string[],
+  resolver?: PackageResolver,
+): string {
+  const skills = resolver ? resolver.skills() : {};
+  const memoryEntries = fs.existsSync(projectMemoryDir(root))
+    ? runMemoryList({ root }).entries
+    : null;
+  return buildProjectIndex(root, technologies, skills, memoryEntries);
+}
+
 function ensureGitignore(root: string): void {
   const gi = path.join(root, '.gitignore');
   const existing = fs.existsSync(gi) ? fs.readFileSync(gi, 'utf8') : '';
@@ -86,15 +106,13 @@ export function runSync(opts: {
   }
 
   fs.mkdirSync(projectSehDir(opts.root), { recursive: true });
-  const skills = opts.resolver ? opts.resolver.skills() : {};
-  const memoryDir = projectMemoryDir(opts.root);
-  const memoryEntries = fs.existsSync(memoryDir)
-    ? runMemoryList({ root: opts.root }).entries
-    : null;
-  fs.writeFileSync(projectCanonicalIndex(opts.root), buildProjectIndex(opts.root, opts.technologies, skills, memoryEntries));
+  fs.writeFileSync(
+    projectCanonicalIndex(opts.root),
+    expectedProjectIndex(opts.root, opts.technologies, opts.resolver),
+  );
   written.push(path.join('.seh', 'AGENTS.md'));
 
-  const lock: LockFile = { version: VERSION, technologies: opts.technologies, generatedAt: new Date().toISOString() };
+  const lock: LockFile = { version: version(), technologies: opts.technologies, generatedAt: new Date().toISOString() };
   fs.writeFileSync(lockFile(opts.root), JSON.stringify(lock, null, 2) + '\n');
   written.push('seh.lock');
 

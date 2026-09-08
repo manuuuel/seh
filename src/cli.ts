@@ -22,6 +22,7 @@ import { SUPPORTED_TECHS } from './catalog.js';
 import { SUPPORTED_AGENTS, SKILL_TARGETS, linkAgent, readConfiguredAgents, readGlobalConfig } from './links.js';
 import { lockFile } from './paths.js';
 import { readResolver } from './package-resolver.js';
+import { version } from './version.js';
 import fs from 'node:fs';
 
 const parseList = (s?: string) => (s ? s.split(',').map((x) => x.trim()).filter(Boolean) : []);
@@ -33,7 +34,7 @@ function fail(err: unknown) {
 
 export function buildProgram(): Command {
   const program = new Command();
-  program.name('seh').description('Portable AI coding harness generator').version('0.5.0');
+  program.name('seh').description('Portable AI coding harness generator').version(version());
 
   const resolver = readResolver(os.homedir());
 
@@ -135,7 +136,7 @@ export function buildProgram(): Command {
     .description('Detect drift between .seh sources and generated files')
     .action(() => {
       try {
-        const res = runCheck({ root: process.cwd() });
+        const res = runCheck({ root: process.cwd(), resolver });
         if (res.ok) { console.log('seh: no drift.'); return; }
         if (res.missing.length) console.error(`seh: missing ${res.missing.join(', ')}`);
         if (res.drift.length) console.error(`seh: stale ${res.drift.join(', ')} (run \`seh sync\`)`);

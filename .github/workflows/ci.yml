@@ -18,5 +18,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: npm
       - run: npm ci
+      # tsup strips types without checking them, so this is the only type gate.
+      - run: npm run typecheck
       - run: npm run compile
       - run: npm test

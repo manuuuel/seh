@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { packageSkillDir, packageSkillsDir } from '../paths.js';
-import type { SkillInvoke } from '../types.js';
+import type { SkillEntry, SkillInvoke } from '../types.js';
 import { addToGitignore, cloneAt, requireHarness, writeHarness } from '../units.js';
 
 export function runSkillsAdd(opts: {
@@ -61,11 +61,19 @@ export function runSkillsUpdate(opts: {
   return { updated };
 }
 
-export function runSkillsList(opts: {
-  packagePath: string;
-}): { skills: Array<{ name: string; type: string; source?: string; ref?: string; onDisk: boolean; invoke?: SkillInvoke }> } {
+/** One row of `seh skills list`: a manifest entry, or a directory found on disk. */
+export type SkillListing = {
+  name: string;
+  type: SkillEntry['type'];
+  source?: string;
+  ref?: string;
+  onDisk: boolean;
+  invoke?: SkillInvoke;
+};
+
+export function runSkillsList(opts: { packagePath: string }): { skills: SkillListing[] } {
   const harness = requireHarness(opts.packagePath);
-  const skills = Object.entries(harness.skills ?? {}).map(([name, entry]) => ({
+  const skills: SkillListing[] = Object.entries(harness.skills ?? {}).map(([name, entry]) => ({
     name,
     type: entry.type,
     source: entry.type === 'reference' ? entry.source : undefined,

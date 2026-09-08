@@ -94,7 +94,11 @@ describe('runCheck (v2)', () => {
     const r = fs.mkdtempSync(path.join(os.tmpdir(), 'sehchk-'));
     fs.mkdirSync(path.join(r, '.seh', 'domain'), { recursive: true });
     fs.writeFileSync(path.join(r, '.seh', 'project.md'), '# Project\n');
-    runSync({ root: r, technologies: ['typescript'], projectTools: ['codex'] });
+    // codex links <root>/AGENTS.md — the symlink this test then replaces.
+    runSync({ root: r, technologies: ['typescript'], projectAgents: ['codex'] });
+    // Assert the premise: without a symlink here the rest of the test passes
+    // vacuously, which it did while the option name was misspelled.
+    expect(fs.lstatSync(path.join(r, 'AGENTS.md')).isSymbolicLink()).toBe(true);
     expect(runCheck({ root: r }).ok).toBe(true);
     // replace the symlink target with a bogus real file
     fs.rmSync(path.join(r, 'AGENTS.md'), { force: true });

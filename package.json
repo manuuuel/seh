@@ -34,10 +34,11 @@
   ],
   "scripts": {
     "compile": "tsup",
+    "typecheck": "tsc --noEmit",
     "dev": "tsx src/cli.ts",
     "test": "vitest run",
     "try": "bash scripts/try.sh",
-    "prepublishOnly": "npm run compile && npm test"
+    "prepublishOnly": "npm run typecheck && npm run compile && npm test"
   },
   "engines": {
     "node": ">=18"

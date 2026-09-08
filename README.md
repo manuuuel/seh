@@ -762,6 +762,7 @@ npm run try
 
 ```bash
 npm install
+npm run typecheck # tsc --noEmit (tsup does not check types)
 npm run compile  # bundle to dist/
 npm test         # run the test suite
 npm run dev      # run the CLI via tsx without building

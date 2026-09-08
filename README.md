@@ -701,7 +701,7 @@ curl -fsSL https://raw.githubusercontent.com/manuuuel/seh/main/scripts/install.s
 ```
 
 - **Update:** re-run the same command.
-- **Pin a version:** `curl -fsSL .../scripts/install.sh | SEH_REF=v0.4.1 sh`
+- **Pin a version:** `curl -fsSL .../scripts/install.sh | SEH_REF=v0.6.0 sh`
 - Installs to `~/.local/share/seh`, symlinks `~/.local/bin/seh`
   (override via `SEH_HOME` / `SEH_BIN`). Requires `node` on PATH.
 - **Uninstall:** `rm -rf ~/.local/share/seh ~/.local/bin/seh`
@@ -710,7 +710,7 @@ curl -fsSL https://raw.githubusercontent.com/manuuuel/seh/main/scripts/install.s
 
 ```bash
 npm install -g github:manuuuel/seh          # latest main
-npm install -g github:manuuuel/seh#v0.4.1   # a tag
+npm install -g github:manuuuel/seh#v0.6.0   # a tag
 ```
 
 Re-run either command to update; installs are repeatable.

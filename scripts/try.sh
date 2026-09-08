@@ -4,7 +4,7 @@ set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 CLI="$REPO/dist/cli.js"
-[ -f "$CLI" ] || { echo "Building…"; (cd "$REPO" && npm run build >/dev/null); }
+[ -f "$CLI" ] || { echo "Building…"; (cd "$REPO" && npm run compile >/dev/null); }
 
 SB="$(mktemp -d)"
 export HOME="$SB/home"; mkdir -p "$HOME"

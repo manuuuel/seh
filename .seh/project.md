@@ -38,7 +38,9 @@ hand-maintained per-tool copies.
   into every repository.
 
 ## Common commands
-- `npm run build` — bundle to `dist/` (tsup, single-file ESM CLI).
+- `npm run compile` — bundle to `dist/` (tsup, single-file ESM CLI). Named
+  `compile`, not `build`: a `build` script would make npm run its git-dep
+  preparation step on `npm i -g github:…`, which corrupts the global install.
 - `npm test` — full Vitest suite (must be green before commit).
 - `npm run dev -- <args>` — run the CLI from source via tsx.
 - `npm run try` — full flow against a throwaway `HOME` (real `~` untouched).

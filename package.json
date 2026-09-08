@@ -33,11 +33,11 @@
     "code-quality"
   ],
   "scripts": {
-    "build": "tsup",
+    "compile": "tsup",
     "dev": "tsx src/cli.ts",
     "test": "vitest run",
     "try": "bash scripts/try.sh",
-    "prepublishOnly": "npm run build && npm test"
+    "prepublishOnly": "npm run compile && npm test"
   },
   "engines": {
     "node": ">=18"

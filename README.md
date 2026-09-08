@@ -713,10 +713,20 @@ npm install -g github:manuuuel/seh          # latest main
 npm install -g github:manuuuel/seh#v0.4.1   # a tag
 ```
 
-npm installs go through npm's git-dep preparation, which can fail with `ENOTDIR`
-if a previous global install left a broken entry. If that happens, remove the
-stale `.../lib/node_modules/se-harness`, run `npm cache clean --force`, and retry
-— or just use the curl installer above, which avoids npm entirely.
+Re-run either command to update; installs are repeatable.
+
+If an older release (≤ v0.5.0) left a broken global entry behind, clear it once:
+
+```bash
+rm -rf "$(npm prefix -g)/lib/node_modules/se-harness" "$(npm prefix -g)/bin/seh"
+npm cache clean --force
+```
+
+Those versions declared a `build` script, which made npm run its git-dep
+preparation step; that step linked the global package at a temporary cache clone
+instead of installing it, so the `seh` binary broke and the next update aborted
+with `ENOTDIR: not a directory, rename '.../se-harness'`. The manifest no longer
+triggers preparation, so this cannot recur.
 
 ### From source (development)
 
@@ -724,7 +734,7 @@ stale `.../lib/node_modules/se-harness`, run `npm cache clean --force`, and retr
 git clone git@github.com:manuuuel/seh.git ~/pocs/seh
 cd ~/pocs/seh
 npm install
-npm run build
+npm run compile
 npm link       # makes `seh` available in $PATH
 ```
 
@@ -752,7 +762,7 @@ npm run try
 
 ```bash
 npm install
-npm run build    # compile to dist/
-npm test         # run the test suite (155 tests)
+npm run compile  # bundle to dist/
+npm test         # run the test suite
 npm run dev      # run the CLI via tsx without building
 ```

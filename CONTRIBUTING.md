@@ -17,11 +17,18 @@ gates that apply to every PR.
 
 ```bash
 npm install
-npm run build    # compile to dist/
+npm run compile  # bundle to dist/
 npm test         # run the test suite
 npm run dev      # run the CLI via tsx without building
 npm run try      # sandboxed demo against a throwaway HOME
 ```
+
+> The bundle script is called `compile`, not `build`, on purpose. npm runs a
+> git-dep preparation step for any package whose manifest declares `build`,
+> `prepare`, `install`, `preinstall`, `postinstall` or `prepack` — and that step
+> corrupts `npm i -g github:manuuuel/seh`. `dist/` is committed, so there is
+> nothing to prepare. Don't rename it back; `test/package-manifest.test.ts`
+> enforces this.
 
 ## Branching & commits
 
@@ -33,7 +40,7 @@ npm run try      # sandboxed demo against a throwaway HOME
 ## Pull requests
 
 - One focused change per PR.
-- `npm run build` and `npm test` must pass locally before you open a PR.
+- `npm run compile` and `npm test` must pass locally before you open a PR.
 - CI must pass and at least one approving review is required before merge
   (enforced by branch protection on `main`).
 - Use the PR template — it's applied automatically when you open a PR.

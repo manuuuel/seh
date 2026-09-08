@@ -5,10 +5,13 @@ import {
   projectIndexFile, projectClaudeFile, projectGeminiFile, projectCopilotFile,
 } from '../paths.js';
 import { stackModule } from '../catalog.js';
-import { buildProjectIndex } from './sync.js';
+import { expectedProjectIndex } from './sync.js';
+import type { PackageResolver } from '../package-resolver.js';
 import type { LockFile } from '../types.js';
 
-export function runCheck(opts: { root: string }): { ok: boolean; drift: string[]; missing: string[] } {
+export function runCheck(
+  opts: { root: string; resolver?: PackageResolver },
+): { ok: boolean; drift: string[]; missing: string[] } {
   const drift: string[] = [];
   const missing: string[] = [];
 
@@ -18,7 +21,7 @@ export function runCheck(opts: { root: string }): { ok: boolean; drift: string[]
   const techs = lock.technologies ?? [];
 
   const idxPath = projectCanonicalIndex(opts.root);
-  const expectedIdx = buildProjectIndex(opts.root, techs);
+  const expectedIdx = expectedProjectIndex(opts.root, techs, opts.resolver);
   if (!fs.existsSync(idxPath)) missing.push('.seh/AGENTS.md');
   else if (fs.readFileSync(idxPath, 'utf8') !== expectedIdx) drift.push('.seh/AGENTS.md');
 

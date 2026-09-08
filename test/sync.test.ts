@@ -7,6 +7,7 @@ import { projectCanonicalIndex, projectIndexFile, projectGeminiFile, projectSehD
 import { PackageResolver } from '../src/package-resolver.js';
 import { packageTemplatesStackDir, packageProjectsDir } from '../src/paths.js';
 import { runPackageInit } from '../src/commands/package.js';
+import { version } from '../src/version.js';
 
 function repoWithProject() {
   const r = fs.mkdtempSync(path.join(os.tmpdir(), 'sehsync-'));
@@ -46,7 +47,7 @@ describe('runSync', () => {
     expect(res.written).toContain('.seh/AGENTS.md');
     expect(res.written).toContain('seh.lock');
     const lock = JSON.parse(fs.readFileSync(path.join(r, 'seh.lock'), 'utf8'));
-    expect(lock.version).toBe('0.4.1');
+    expect(lock.version).toBe(version());
     expect(lock.technologies).toEqual(['typescript']);
   });
   it('throws on unknown technology', () => {
